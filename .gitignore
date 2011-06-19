@@ -1,0 +1,15 @@
+
+/BitMaker/bin
+/BitMaker/obj
+/BitMaker.Console/bin
+/BitMaker.Console/obj
+/BitMaker.Miner/obj
+/BitMaker.Miner/bin
+/BitMaker.Miner.Plugin/bin
+/BitMaker.Miner.Plugin/obj
+/BitMaker.Miner.Plugin.Cloo/bin
+/BitMaker.Miner.Plugin.Cloo/obj
+/BitMaker.Miner.Plugin.Cpu/obj
+/BitMaker.Miner.Plugin.Cpu/bin
+*.suo
+*.docstates
