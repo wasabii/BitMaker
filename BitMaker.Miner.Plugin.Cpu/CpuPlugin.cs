@@ -123,7 +123,7 @@ namespace BitMaker.Miner.Plugin.Cpu
                     }
 
                     // the hash is byte order flipped state, quick check that state passes a test before doing work
-                    if (state2Ptr[7] == 0U)
+                    if (state2Ptr[0] == 0U || state2Ptr[7] == 0U)
                     {
                         // finalize the hash, essentially reverting byte order
                         Sha256.Finalize(state2Ptr, hashPtr);
@@ -132,6 +132,12 @@ namespace BitMaker.Miner.Plugin.Cpu
                         work.Header = new byte[80];
                         fixed (byte* dstHeaderPtr = work.Header)
                             Memory.Copy((uint*)dataPtr, (uint*)dstHeaderPtr, 20);
+
+                        if (state2Ptr[0] == 0U)
+                            Console.WriteLine("First uint is zero.");
+
+                        if (state2Ptr[7] == 0U)
+                            Console.WriteLine("Last uint is zero.");
 
                         // submit work for completion
                         if (!ctx.SubmitWork(work))
