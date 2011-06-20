@@ -65,6 +65,14 @@ namespace BitMaker.Miner.Plugin.Cpu
         /// <param name="work"></param>
         private unsafe void ProcessWork(Work work)
         {
+            /* This procedure is optimized based on the internals of the SHA-256 algorithm. As each block is transformed,
+             * the state variable is updated. Finalizing the hash consists of reversing the byte order of the state.
+             * Data to be hashed needs to have it's byte order reversed. Instead of reversing the first state to obtain
+             * the first hash and then reversing it again, we output the transform of the header directly into a block
+             * pre-padded to the size of a hash, and then transform that again using new state. This prevents the double
+             * byte order swap.
+             **/
+
             // bail out on stale work
             if (cts.IsCancellationRequested || work.Token.IsCancellationRequested)
                 return;
@@ -101,17 +109,17 @@ namespace BitMaker.Miner.Plugin.Cpu
                 // read initial nonce value
                 uint nonce = Memory.ReverseEndian(((uint*)dataPtr)[19]);
 
+                // initial state
+                Sha256.Initialize(statePtr);
+
                 // pin arrays for the duration of this tight loop
                 while (nonce < uint.MaxValue)
                 {
                     // transform variable second half of block using saved state
-                    Sha256.Transform(midstatePtr, dataPtr + Sha256.SHA256_BLOCK_SIZE, statePtr);
-                    // Sha256.Finalize(statePtr, hashPtr); // no need to finalize, rehashing same value
+                    Sha256.Transform(midstatePtr, dataPtr + Sha256.SHA256_BLOCK_SIZE, (uint*)hashPtr);
 
-                    // compute second hash
-                    // Sha256.Prepare(hashPtr, Sha256.SHA256_HASH_SIZE, 0); // no need to prepare, already done
-                    Sha256.Initialize(state2Ptr);
-                    Sha256.Transform(state2Ptr, (byte*)statePtr);
+                    // compute second hash back into hash
+                    Sha256.Transform(statePtr, hashPtr, state2Ptr);
 
                     // only report and check for exit conditions every so often
                     if (nonce % 16384 == 0 && nonce > 0)
@@ -124,18 +132,15 @@ namespace BitMaker.Miner.Plugin.Cpu
                     // the hash is byte order flipped state, quick check that state passes a test before doing work
                     if (state2Ptr[0] == 0U || state2Ptr[7] == 0U)
                     {
-                        // finalize the hash, essentially reverting byte order
-                        Sha256.Finalize(state2Ptr, hashPtr);
-
                         // replace header data on work
                         work.Header = new byte[80];
                         fixed (byte* dstHeaderPtr = work.Header)
                             Memory.Copy((uint*)dataPtr, (uint*)dstHeaderPtr, 20);
 
-                        if (state2Ptr[0] == 0U)
+                        if (statePtr[0] == 0U)
                             Console.WriteLine("First uint is zero.");
 
-                        if (state2Ptr[7] == 0U)
+                        if (statePtr[7] == 0U)
                             Console.WriteLine("Last uint is zero.");
 
                         // submit work for completion
