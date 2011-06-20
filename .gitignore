@@ -13,3 +13,7 @@
 /BitMaker.Miner.Plugin.Cpu/bin
 *.suo
 *.docstates
+/BitMaker.Utils.Tests/bin
+/BitMaker.Utils.Tests/obj
+/BitMaker.Utils/bin
+/BitMaker.Utils/obj
