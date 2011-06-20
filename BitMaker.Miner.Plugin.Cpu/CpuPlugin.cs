@@ -65,6 +65,10 @@ namespace BitMaker.Miner.Plugin.Cpu
         /// <param name="work"></param>
         private unsafe void ProcessWork(Work work)
         {
+            // bail out on stale work
+            if (cts.IsCancellationRequested || work.Token.IsCancellationRequested)
+                return;
+
             // allocate buffers to hold hashing work
             byte[] data = Sha256.AllocateInputBuffer(80);
             uint[] midstate = Sha256.AllocateStateBuffer();
@@ -119,19 +123,10 @@ namespace BitMaker.Miner.Plugin.Cpu
                     }
 
                     // the hash is byte order flipped state, quick check that state passes a test before doing work
-                    if (state2Ptr[0] == 0U)
+                    if (state2Ptr[7] == 0U)
                     {
                         // finalize the hash, essentially reverting byte order
                         Sha256.Finalize(state2Ptr, hashPtr);
-
-                        bool success = true;
-
-                        //for (int i = 31; i >= 0; i--)
-                        //    if (hashPtr[i] > workTargetPtr[i] || hashPtr[i] < workTargetPtr[i])
-                        //    {
-                        //        success = false;
-                        //        break;
-                        //    }
 
                         // replace header data on work
                         work.Header = new byte[80];
@@ -139,8 +134,8 @@ namespace BitMaker.Miner.Plugin.Cpu
                             Memory.Copy((uint*)dataPtr, (uint*)dstHeaderPtr, 20);
 
                         // submit work for completion
-                        if (ctx.SubmitWork(work) != success)
-                            Console.WriteLine("Invalid Hash Reported");
+                        if (!ctx.SubmitWork(work))
+                            Console.WriteLine("Invalid hash submitted");
                     }
 
                     // update the nonce value

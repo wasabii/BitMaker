@@ -32,7 +32,7 @@ namespace BitMaker.Miner
         /// <summary>
         /// Number of units of work that should be kept outstanding.
         /// </summary>
-        private const int WORKPOOL_LIMIT = 10;
+        private const int WORKPOOL_LIMIT = 5;
 
         /// <summary>
         /// Thread that keeps the work pool full.
@@ -42,7 +42,7 @@ namespace BitMaker.Miner
         /// <summary>
         /// Available work. Most recent work at the beginning.
         /// </summary>
-        private BlockingCollection<Work> workPool;
+        private LinkedList<Work> workPool;
 
         /// <summary>
         /// Number of milliseconds after which to expire work.
@@ -95,7 +95,7 @@ namespace BitMaker.Miner
                 cancellation = new CancellationTokenSource();
 
                 // thread that ensures there is work available in the pool
-                workPool = new BlockingCollection<Work>(new ConcurrentStack<Work>(), WORKPOOL_LIMIT);
+                workPool = new LinkedList<Work>();
                 workPoolThread = new Thread(WorkPoolThread);
                 workPoolThread.Start();
 
@@ -127,6 +127,7 @@ namespace BitMaker.Miner
 
                 // cancel various processes
                 cancellation.Cancel();
+                lock (workPool) Monitor.PulseAll(workPool);
                 workPoolThread.Join();
 
                 // stop updating statistics
@@ -145,21 +146,34 @@ namespace BitMaker.Miner
         {
             get { return hashesPerSecond; }
         }
-        
+
         /// <summary>
         /// Gets a new unit of work.
         /// </summary>
         /// <returns></returns>
         public Work GetWork()
         {
-            try
-            {
-                return workPool.Take(cancellation.Token);
-            }
-            catch (OperationCanceledException)
-            {
-                return null;
-            }
+            Work work = null;
+
+            while (work == null)
+                lock (workPool)
+                {
+                    // obtain first item
+                    while (workPool.First == null && !cancellation.IsCancellationRequested)
+                        Monitor.Wait(workPool, 2000);
+
+                    // pop node out of list
+                    work = workPool.First != null ? workPool.First.Value : null;
+                    if (work != null)
+                        workPool.RemoveFirst();
+
+                    Monitor.PulseAll(workPool);
+
+                    if (cancellation.IsCancellationRequested)
+                        return null;
+                }
+
+            return work;
         }
 
         /// <summary>
@@ -187,31 +201,38 @@ namespace BitMaker.Miner
         /// </summary>
         private void WorkPoolThread()
         {
-            var ct = cancellation.Token;
-            var delay = true;
-
-            // continually try to add more work to the pool
-            try
+            while (!cancellation.IsCancellationRequested)
             {
-                while (!ct.IsCancellationRequested)
+                // wait until we are signaled
+                lock (workPool)
+                    while (workPool.Count >= WORKPOOL_LIMIT && !cancellation.IsCancellationRequested)
+                        Monitor.Wait(workPool, 2000);
+
+                // obtain new work without locking pool, if required
+                var work = workPool.Count < WORKPOOL_LIMIT ? GetWorkImpl() : null;
+
+                lock (workPool)
                 {
-                    // add new work to pool
-                    var work = GetWorkImpl();
+                    // add the new item, if we obtained it
                     if (work != null)
-                        workPool.Add(work, ct);
-
-                    // slow down the initial fill of the pool so as to be kind to servers
-                    if (delay)
                     {
-                        Thread.Sleep(2000);
-                        if (workPool.Count == WORKPOOL_LIMIT)
-                            delay = false;
+                        workPool.AddFirst(work);
+
+                        // when the item we're adding is expired, we might want to rescan the pool
+                        work.Token.Register(() =>
+                        {
+                            lock (workPool)
+                                Monitor.PulseAll(workPool);
+                        });
                     }
+
+                    // scrape expired items off the bottom
+                    while (workPool.Last != null && workPool.Last.Value.Token.IsCancellationRequested)
+                        workPool.RemoveLast();
+
+                    // let anybody waiting on new items know
+                    Monitor.PulseAll(workPool);
                 }
-            }
-            catch (OperationCanceledException)
-            {
-                // ignore
             }
         }
 
@@ -226,7 +247,7 @@ namespace BitMaker.Miner
             // average the previous value with the new value
             hashesPerSecond = (hashesPerSecond + (hc / (STATISTICS_PERIOD / 1000))) / 2;
         }
-        
+
         #region JSON-RPC
 
         /// <summary>
