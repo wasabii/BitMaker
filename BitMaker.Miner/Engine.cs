@@ -11,6 +11,7 @@ using Jayrock.Json;
 using Jayrock.Json.Conversion;
 
 using BitMaker.Miner.Plugin;
+using BitMaker.Utils;
 
 namespace BitMaker.Miner
 {
@@ -187,12 +188,26 @@ namespace BitMaker.Miner
         private void WorkPoolThread()
         {
             var ct = cancellation.Token;
+            var delay = true;
 
             // continually try to add more work to the pool
             try
             {
                 while (!ct.IsCancellationRequested)
-                    workPool.Add(GetWorkImpl(), ct);
+                {
+                    // add new work to pool
+                    var work = GetWorkImpl();
+                    if (work != null)
+                        workPool.Add(work, ct);
+
+                    // slow down the initial fill of the pool so as to be kind to servers
+                    if (delay)
+                    {
+                        Thread.Sleep(2000);
+                        if (workPool.Count == WORKPOOL_LIMIT)
+                            delay = false;
+                    }
+                }
             }
             catch (OperationCanceledException)
             {
@@ -220,10 +235,14 @@ namespace BitMaker.Miner
         /// <returns></returns>
         private static HttpWebRequest RpcOpen()
         {
-            var req = (HttpWebRequest)HttpWebRequest.Create("http://api.bitcoin.cz:8332/");
-            req.Credentials = new NetworkCredential("wasabi.kyoto", "10241024abcdabcd");
-            //var req = (HttpWebRequest)HttpWebRequest.Create("http://tokyo.larvalstage.net:8332/");
-            //req.Credentials = new NetworkCredential("wasabi", "J5qTfh11SDTrxfFbdHf0QYEXWyI2gNwT");
+            // configuration info, containing user name and password
+            var url = ConfigurationSection.GetDefaultSection().Url;
+            var user = url.UserInfo.Split(':');
+
+            // create request, authenticating using information in the url
+            var req = (HttpWebRequest)HttpWebRequest.Create(url);
+            req.Credentials = new NetworkCredential(user[0], user[1]);
+            req.PreAuthenticate = true;
             req.Method = "POST";
             return req;
         }
@@ -246,12 +265,8 @@ namespace BitMaker.Miner
                 wrt.WriteMember("params");
                 wrt.WriteStartArray();
                 wrt.WriteEndArray();
-                wrt.WriteMember("id");
-                wrt.WriteString(new Guid().ToString());
                 wrt.WriteEndObject();
                 wrt.Flush();
-                txt.WriteLine();
-                txt.WriteLine();
             }
 
             // retrieve invocation response
@@ -265,9 +280,12 @@ namespace BitMaker.Miner
                 if (response == null)
                     throw new JsonException("No response returned.");
 
+                if (response.Error != null)
+                    Console.WriteLine("JSON-RPC: {0}", response.Error);
+
                 var result = response.Result;
                 if (result == null)
-                    throw new JsonException("Response missing 'result' value.");
+                    return null;
 
                 // create a timer which cancels the work after a period
                 var cts = new CancellationTokenSource();
@@ -275,12 +293,21 @@ namespace BitMaker.Miner
                 cts.Token.Register(() => tmr.Dispose());
 
                 // generate new work instance
-                return new Work()
+                var work = new Work()
                 {
                     Token = cts.Token,
-                    Header = Utils.DecodeHex(result.Data, 80),
-                    Target = Utils.DecodeHex(result.Target, 32),
+                    Header = Memory.Decode(result.Data),
+                    Target = Memory.Decode(result.Target),
+                    Midstate = Memory.Decode(result.Midstate),
                 };
+
+                if (work.Header == null || work.Header.Length != 128)
+                    throw new InvalidDataException("Received header is not valid.");
+
+                if (work.Target == null || work.Target.Length != 32)
+                    throw new InvalidDataException("Received target is not valid.");
+
+                return work;
             }
         }
 
@@ -290,9 +317,21 @@ namespace BitMaker.Miner
         /// </summary>
         /// <param name="work"></param>
         /// <returns></returns>
-        private static bool SubmitWorkImpl(Work work)
+        private static unsafe bool SubmitWorkImpl(Work work)
         {
             var req = RpcOpen();
+
+            // copy passed header data to new header buffer
+            var data = Sha256.AllocateInputBuffer(80);
+            Array.Copy(work.Header, data, 80);
+
+            // prepare header buffer with SHA-256
+            Sha256.Prepare(data, 80, 0);
+            Sha256.Prepare(data, 80, 1);
+
+            // server expects buffer endian reversed
+            fixed (byte* dataPtr = data)
+                Memory.ReverseEndian((uint*)dataPtr, Sha256.SHA256_BLOCK_SIZE * 2 / 8);
 
             using (var txt = new StreamWriter(req.GetRequestStream()))
             using (var wrt = new JsonTextWriter(txt))
@@ -302,23 +341,26 @@ namespace BitMaker.Miner
                 wrt.WriteString("getwork");
                 wrt.WriteMember("params");
                 wrt.WriteStartArray();
-                wrt.WriteString(Utils.EncodeHex(work.Header));
+                wrt.WriteString(Memory.Encode(data));
                 wrt.WriteEndArray();
-                wrt.WriteMember("id");
-                wrt.WriteString(new Guid().ToString());
                 wrt.WriteEndObject();
                 wrt.Flush();
-                txt.WriteLine();
-                txt.WriteLine();
             }
 
             using (var txt = new StreamReader(req.GetResponse().GetResponseStream()))
             using (var rdr = new JsonTextReader(txt))
             {
-                if (rdr.MoveToContent() && rdr.Read() && rdr.ReadMember() == "result")
-                    return rdr.ReadBoolean();
-                else
-                    throw new JsonException("Unexpected result to 'getwork <data>'.");
+                if (!rdr.MoveToContent() && rdr.Read())
+                    throw new JsonException("Unexpected content from 'getwork <data>'.");
+
+                var response = JsonConvert.Import<JsonSubmitWork>(rdr);
+                if (response == null)
+                    throw new JsonException("No response returned.");
+
+                if (response.Error != null)
+                    Console.WriteLine("JSON-RPC: {0}", response.Error);
+
+                return response.Result;
             }
         }
 

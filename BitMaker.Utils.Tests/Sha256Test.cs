@@ -15,10 +15,10 @@ namespace BitMaker.Utils.Tests
         [TestMethod]
         public unsafe void StringHashTest()
         {
-            var data = Encoding.UTF8.GetBytes("abc");
+            var data = Encoding.UTF8.GetBytes("abcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabc");
             var work = Sha256.AllocateInputBuffer(data.Length);
-            var state = new uint[Sha256.SHA256_STATE_SIZE];
-            var hash = new byte[Sha256.SHA256_HASH_SIZE];
+            var state = Sha256.AllocateStateBuffer();
+            var hash = Sha256.AllocateHashBuffer();
 
             // reference data for comparison against
             var refHash = System.Security.Cryptography.SHA256.Create().ComputeHash(data);
@@ -36,7 +36,7 @@ namespace BitMaker.Utils.Tests
 
                 for (int i = 0; i < work.Length / Sha256.SHA256_BLOCK_SIZE; i++)
                 {
-                    Sha256.Prepare(workPtr, data.Length, i);
+                    Sha256.Prepare(workPtr + i * Sha256.SHA256_BLOCK_SIZE, data.Length, i);
                     Sha256.Transform(statePtr, workPtr + i * Sha256.SHA256_BLOCK_SIZE);
                 }
 

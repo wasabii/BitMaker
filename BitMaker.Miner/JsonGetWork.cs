@@ -15,6 +15,9 @@ namespace BitMaker.Miner
         [JsonMemberName("result")]
         public JsonGetWorkResult Result { get; set; }
 
+        [JsonMemberName("error")]
+        public string Error { get; set; }
+
     }
 
     /// <summary>

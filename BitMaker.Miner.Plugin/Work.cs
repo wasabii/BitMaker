@@ -26,6 +26,8 @@ namespace BitMaker.Miner.Plugin
         /// </summary>
         public byte[] Target { get; set; }
 
+        public byte[] Midstate { get; set; }
+
     }
 
 }

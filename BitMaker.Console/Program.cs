@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 
 using BitMaker.Miner;
 
@@ -21,6 +22,8 @@ namespace BitMaker.Console
 
             global::System.Console.ReadLine();
             engine.Stop();
+
+            GC.KeepAlive(timer);
         }
 
         private static void TimerCallback(object state)

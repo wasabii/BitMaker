@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Runtime.InteropServices;
+
+using BitMaker.Utils;
 
 namespace BitMaker.Miner.Plugin.Cpu
 {
@@ -48,7 +48,10 @@ namespace BitMaker.Miner.Plugin.Cpu
         {
             try
             {
-                GetWorkStream().AsParallel().WithCancellation(cts.Token).ForAll(ProcessWork);
+                GetWorkStream().AsParallel()
+                    .WithCancellation(cts.Token)
+                    //.WithDegreeOfParallelism(1)
+                    .ForAll(ProcessWork);
             }
             catch (OperationCanceledException)
             {
@@ -62,84 +65,87 @@ namespace BitMaker.Miner.Plugin.Cpu
         /// <param name="work"></param>
         private unsafe void ProcessWork(Work work)
         {
-            // allocate and prepare copy of target structure capable of being hashed
-            byte* target = stackalloc byte[32];
-            Marshal.Copy(work.Target, 0, (IntPtr)target, 32);
+            // allocate buffers to hold hashing work
+            byte[] data = Sha256.AllocateInputBuffer(80);
+            uint[] midstate = Sha256.AllocateStateBuffer();
+            uint[] state = Sha256.AllocateStateBuffer();
+            uint[] state2 = Sha256.AllocateStateBuffer();
+            byte[] hash = new byte[Sha256.SHA256_BLOCK_SIZE];
 
-            // allocate and prepare copy of header structure capable of being hashed
-            byte* header = stackalloc byte[128];
-            Marshal.Copy(work.Header, 0, (IntPtr)header, 80);
-
-            // SHA-256 required bit '1' ending, flipped order on 32 bit boundary
-            ((uint*)header)[20] = BitUtil.ReverseEndian((uint)0x80);
-
-            // SHA-256 required 64 bit length field, flipped order on 32 bit boundary
-            ((ulong*)header)[15] = BitUtil.ReverseEndian(80 * 8);
-            ((uint*)header)[30] = BitUtil.ReverseEndian(((uint*)header)[30]);
-            ((uint*)header)[31] = BitUtil.ReverseEndian(((uint*)header)[31]);
-
-            // extract the initial value of noonce
-            uint nonce = BitUtil.ReverseEndian(((uint*)header)[19]);
-
-            // hash first half of header
-            byte* midstate = stackalloc byte[32];
-            Sha256.Init(midstate);
-            Sha256.Transform(midstate, header);
-
-            // allocate and prepare first hash output buffer
-            byte* hash1 = stackalloc byte[64];
-
-            // SHA-256 required bit '1' ending, flipped order on 32 bit boundary
-            ((uint*)hash1)[8] = BitUtil.ReverseEndian((uint)0x80);
-
-            // SHA-256 required 64 bit length field, flipped order on 32 bit boundary
-            ((ulong*)hash1)[7] = BitUtil.ReverseEndian((ulong)32 * 8);
-            ((uint*)hash1)[15] = BitUtil.ReverseEndian(((uint*)hash1)[15]);
-            ((uint*)hash1)[16] = BitUtil.ReverseEndian(((uint*)hash1)[16]);
-
-            // allocate last hash output
-            byte* hash2 = stackalloc byte[32];
-
-            // continue working as long as possible
-            while (!cts.IsCancellationRequested && !work.Token.IsCancellationRequested && nonce < uint.MaxValue)
+            fixed (byte* workHeaderPtr = work.Header, workTargetPtr = work.Target)
+            fixed (byte* dataPtr = data, hashPtr = hash)
+            fixed (uint* midstatePtr = midstate, statePtr = state, state2Ptr = state2)
             {
-                // compute variable portion of data
-                BitUtil.Copy(midstate, hash1, 0, 32);
-                Sha256.Transform(hash1, header + 64);
+                if (BitConverter.IsLittleEndian)
+                    // header arrives in big endian, convert to host
+                    Memory.ReverseEndian((uint*)workHeaderPtr, (uint*)dataPtr, 20);
+                else
+                    // simply copy if conversion not required
+                    Memory.Copy((uint*)workHeaderPtr, (uint*)dataPtr, 20);
 
-                // compute second hash
-                Sha256.Init(hash2);
-                Sha256.Transform(hash2, hash1);
+                // append '1' bit and trailing length
+                Sha256.Prepare(dataPtr, 80, 0);
+                Sha256.Prepare(dataPtr + Sha256.SHA256_BLOCK_SIZE, 80, 1);
 
-                // we just generated a hash!
-                ctx.ReportHashes(this, 1);
+                // hash first half of header
+                Sha256.Initialize(midstatePtr);
+                Sha256.Transform(midstatePtr, dataPtr);
 
-                // quick test
-                if (((uint*)hash2)[7] == 0U)
+                // prepare the block of the hash buffer for the second round, this data shouldn't be overwritten
+                Sha256.Prepare(hashPtr, Sha256.SHA256_HASH_SIZE, 0);
+
+                // read initial nonce value
+                uint nonce = Memory.ReverseEndian(((uint*)dataPtr)[19]);
+
+                // pin arrays for the duration of this tight loop
+                while (nonce < uint.MaxValue)
                 {
-                    bool success = true;
+                    // transform variable second half of block using saved state
+                    Memory.Copy(midstatePtr, statePtr, Sha256.SHA256_STATE_SIZE);
+                    Sha256.Transform(statePtr, dataPtr + Sha256.SHA256_BLOCK_SIZE);
+                    // Sha256.Finalize(statePtr, hashPtr); // no need to finalize, rehashing same value
 
-                    for (int i = 31; i <= 0; i--)
-                        if (((uint*)hash2)[i] > ((uint*)target)[i] || ((uint*)hash2)[i] < ((uint*)target)[i])
-                        {
-                            success = false;
+                    // compute second hash
+                    // Sha256.Prepare(hashPtr, Sha256.SHA256_HASH_SIZE, 0); // no need to prepare, already done
+                    Sha256.Initialize(state2Ptr);
+                    Sha256.Transform(state2Ptr, (byte*)statePtr);
+
+                    // only report and check for exit conditions every so often
+                    if (nonce % 16384 == 0 && nonce > 0)
+                    {
+                        ctx.ReportHashes(this, 16384);
+                        if (cts.IsCancellationRequested || work.Token.IsCancellationRequested)
                             break;
-                        }
+                    }
 
-                    // to correlate with that reported by the server
-                    Console.WriteLine("FullTest: {0}", success);
+                    // the hash is byte order flipped state, quick check that state passes a test before doing work
+                    if (state2Ptr[0] == 0U)
+                    {
+                        // finalize the hash, essentially reverting byte order
+                        Sha256.Finalize(state2Ptr, hashPtr);
 
-                    // replace header data on work
-                    work.Header = new byte[80];
-                    Marshal.Copy((IntPtr)header, work.Header, 0, 80);
+                        bool success = true;
 
-                    // submit work for completion
-                    if (ctx.SubmitWork(work) != success)
-                        Console.WriteLine("Invalid Hash Reported");
+                        //for (int i = 31; i >= 0; i--)
+                        //    if (hashPtr[i] > workTargetPtr[i] || hashPtr[i] < workTargetPtr[i])
+                        //    {
+                        //        success = false;
+                        //        break;
+                        //    }
+
+                        // replace header data on work
+                        work.Header = new byte[80];
+                        fixed (byte* dstHeaderPtr = work.Header)
+                            Memory.Copy((uint*)dataPtr, (uint*)dstHeaderPtr, 20);
+
+                        // submit work for completion
+                        if (ctx.SubmitWork(work) != success)
+                            Console.WriteLine("Invalid Hash Reported");
+                    }
+
+                    // update the nonce value
+                    ((uint*)dataPtr)[19] = Memory.ReverseEndian(++nonce);
                 }
-
-                // update the nonce value
-                ((uint*)header)[19] = BitUtil.ReverseEndian(++nonce);
             }
         }
 

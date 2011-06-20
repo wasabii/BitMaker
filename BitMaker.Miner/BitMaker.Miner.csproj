@@ -22,7 +22,7 @@
     <DebugSymbols>true</DebugSymbols>
     <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <DebugType>full</DebugType>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
@@ -36,6 +36,7 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisIgnoreBuiltInRules>false</CodeAnalysisIgnoreBuiltInRules>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Jayrock">
@@ -46,14 +47,16 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.Composition" />
+    <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ConfigurationSection.cs" />
+    <Compile Include="JsonSubmitWork.cs" />
     <Compile Include="JsonGetWork.cs" />
     <Compile Include="Engine.cs" />
     <Compile Include="WorkStack.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Utils.cs" />
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
@@ -77,9 +80,6 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <WCFMetadata Include="Service References\" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\BitMaker.Miner.Plugin.Cpu\BitMaker.Miner.Plugin.Cpu.csproj">
       <Project>{1DCB57B9-30CB-4557-AAE5-94481CFA6B13}</Project>
       <Name>BitMaker.Miner.Plugin.Cpu</Name>
@@ -87,6 +87,10 @@
     <ProjectReference Include="..\BitMaker.Miner.Plugin\BitMaker.Miner.Plugin.csproj">
       <Project>{B64FE513-79E8-4443-AF2C-0BB921A19F24}</Project>
       <Name>BitMaker.Miner.Plugin</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\BitMaker.Utils\BitMaker.Utils.csproj">
+      <Project>{24BBFAE2-CC57-4909-A34B-ED84068EA795}</Project>
+      <Name>BitMaker.Utils</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

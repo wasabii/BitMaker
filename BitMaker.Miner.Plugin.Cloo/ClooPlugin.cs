@@ -255,6 +255,8 @@ kernel void test(
 
         public void Start(IPluginContext context)
         {
+            return;
+
             string code;
             var kernelRes = Assembly.GetExecutingAssembly().GetManifestResourceStream("BitMaker.Miner.Plugin.Cloo.Miner.cl");
             using (var rdr = new StreamReader(kernelRes))
@@ -295,7 +297,8 @@ kernel void test(
 
         public void Stop()
         {
-            ccontext.Dispose();
+            if (ccontext != null)
+                ccontext.Dispose();
         }
 
     }
