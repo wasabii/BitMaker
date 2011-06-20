@@ -20,6 +20,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BitMaker.Console", "BitMake
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BitMaker.Miner.Plugin.Cloo", "BitMaker.Miner.Plugin.Cloo\BitMaker.Miner.Plugin.Cloo.csproj", "{4276299E-7F12-438C-B963-2F7EAFC30C8F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BitMaker.Utils", "BitMaker.Utils\BitMaker.Utils.csproj", "{24BBFAE2-CC57-4909-A34B-ED84068EA795}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BitMaker.Utils.Tests", "BitMaker.Utils.Tests\BitMaker.Utils.Tests.csproj", "{EE089490-919E-4EC1-BBE9-F4C3909945C0}"
+EndProject
 Global
 	GlobalSection(TestCaseManagementSettings) = postSolution
 		CategoryFile = BitMaker.vsmdi
@@ -93,6 +97,26 @@ Global
 		{4276299E-7F12-438C-B963-2F7EAFC30C8F}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{4276299E-7F12-438C-B963-2F7EAFC30C8F}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{4276299E-7F12-438C-B963-2F7EAFC30C8F}.Release|x86.ActiveCfg = Release|Any CPU
+		{24BBFAE2-CC57-4909-A34B-ED84068EA795}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{24BBFAE2-CC57-4909-A34B-ED84068EA795}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{24BBFAE2-CC57-4909-A34B-ED84068EA795}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{24BBFAE2-CC57-4909-A34B-ED84068EA795}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{24BBFAE2-CC57-4909-A34B-ED84068EA795}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{24BBFAE2-CC57-4909-A34B-ED84068EA795}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{24BBFAE2-CC57-4909-A34B-ED84068EA795}.Release|Any CPU.Build.0 = Release|Any CPU
+		{24BBFAE2-CC57-4909-A34B-ED84068EA795}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{24BBFAE2-CC57-4909-A34B-ED84068EA795}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{24BBFAE2-CC57-4909-A34B-ED84068EA795}.Release|x86.ActiveCfg = Release|Any CPU
+		{EE089490-919E-4EC1-BBE9-F4C3909945C0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EE089490-919E-4EC1-BBE9-F4C3909945C0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EE089490-919E-4EC1-BBE9-F4C3909945C0}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{EE089490-919E-4EC1-BBE9-F4C3909945C0}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{EE089490-919E-4EC1-BBE9-F4C3909945C0}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{EE089490-919E-4EC1-BBE9-F4C3909945C0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EE089490-919E-4EC1-BBE9-F4C3909945C0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EE089490-919E-4EC1-BBE9-F4C3909945C0}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{EE089490-919E-4EC1-BBE9-F4C3909945C0}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{EE089490-919E-4EC1-BBE9-F4C3909945C0}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
