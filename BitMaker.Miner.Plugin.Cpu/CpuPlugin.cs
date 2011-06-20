@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 
 using BitMaker.Utils;
@@ -12,46 +10,80 @@ namespace BitMaker.Miner.Plugin.Cpu
     public class CpuPlugin : IPlugin
     {
 
+        private readonly object syncRoot = new object();
+        private bool started = false;
         private IPluginContext ctx;
+
+        /// <summary>
+        /// Signals work threads to stop.
+        /// </summary>
         private CancellationTokenSource cts;
+
+        /// <summary>
+        /// Set of threads that attempt to pull and process work.
+        /// </summary>
+        private Thread[] workThreads;
 
         public void Start(IPluginContext ctx)
         {
-            this.ctx = ctx;
-            this.cts = new CancellationTokenSource();
+            lock (syncRoot)
+            {
+                if (started)
+                    return;
 
-            // initialize parallel work processor
-            new Thread(ProcessMain).Start();
+                this.ctx = ctx;
+                this.cts = new CancellationTokenSource();
+
+                // create work threads
+                workThreads = new Thread[Environment.ProcessorCount * 2];
+                for (int i = 0; i < workThreads.Length; i++)
+                {
+                    workThreads[i] = new Thread(WorkThread)
+                    {
+                        Name = "Cpu Work Thread : " + i,
+                        IsBackground = true,
+                        Priority = ThreadPriority.Lowest,
+                    };
+                    workThreads[i].Start(cts.Token);
+                }
+
+                started = true;
+            }
         }
 
         public void Stop()
         {
-            // signal thread to stop
-            cts.Cancel();
-        }
+            lock (syncRoot)
+            {
+                if (!started)
+                    return;
 
-        /// <summary>
-        /// Provides a blocking enumerable of incoming work items.
-        /// </summary>
-        /// <returns></returns>
-        private IEnumerable<Work> GetWorkStream()
-        {
-            Work work;
-            while ((work = ctx.GetWork()) != null)
-                yield return work;
+                // signal threads to die
+                cts.Cancel();
+
+                // wait for all threads to die
+                foreach (var workThread in workThreads)
+                    workThread.Join();
+
+                // clean up state
+                workThreads = null;
+                cts = null;
+                ctx = null;
+                started = false;
+            }
         }
 
         /// <summary>
         /// Entry-point for main thread. Uses PLinq to schedule all available work.
         /// </summary>
-        private void ProcessMain()
+        private void WorkThread(object state)
         {
+            var ct = (CancellationToken)state;
+
             try
             {
-                GetWorkStream().AsParallel()
-                    .WithCancellation(cts.Token)
-                    //.WithDegreeOfParallelism(1)
-                    .ForAll(ProcessWork);
+                while (!ct.IsCancellationRequested)
+                    Work(ctx.GetWork());
             }
             catch (OperationCanceledException)
             {
@@ -63,7 +95,7 @@ namespace BitMaker.Miner.Plugin.Cpu
         /// Invoked for each retrieved work item.
         /// </summary>
         /// <param name="work"></param>
-        private unsafe void ProcessWork(Work work)
+        private unsafe void Work(Work work)
         {
             /* This procedure is optimized based on the internals of the SHA-256 algorithm. As each block is transformed,
              * the state variable is updated. Finalizing the hash consists of reversing the byte order of the state.
@@ -73,8 +105,8 @@ namespace BitMaker.Miner.Plugin.Cpu
              * byte order swap.
              **/
 
-            // bail out on stale work
-            if (cts.IsCancellationRequested || work.Token.IsCancellationRequested)
+            // bail out on stale or no work
+            if (work == null || work.CancellationToken.IsCancellationRequested || cts.IsCancellationRequested)
                 return;
 
             // allocate buffers to hold hashing work
@@ -112,8 +144,8 @@ namespace BitMaker.Miner.Plugin.Cpu
                 // initial state
                 Sha256.Initialize(statePtr);
 
-                // pin arrays for the duration of this tight loop
-                while (nonce < uint.MaxValue)
+                // test every possible nonce value
+                while (nonce <= uint.MaxValue)
                 {
                     // transform variable second half of block using saved state
                     Sha256.Transform(midstatePtr, dataPtr + Sha256.SHA256_BLOCK_SIZE, (uint*)hashPtr);
@@ -122,10 +154,10 @@ namespace BitMaker.Miner.Plugin.Cpu
                     Sha256.Transform(statePtr, hashPtr, state2Ptr);
 
                     // only report and check for exit conditions every so often
-                    if (nonce % 16384 == 0 && nonce > 0)
+                    if (nonce % 1024 == 0 && nonce > 0)
                     {
-                        ctx.ReportHashes(this, 16384);
-                        if (cts.IsCancellationRequested || work.Token.IsCancellationRequested)
+                        ctx.ReportHashes(this, 1024);
+                        if (work.CancellationToken.IsCancellationRequested || cts.IsCancellationRequested)
                             break;
                     }
 
@@ -137,15 +169,27 @@ namespace BitMaker.Miner.Plugin.Cpu
                         fixed (byte* dstHeaderPtr = work.Header)
                             Memory.Copy((uint*)dataPtr, (uint*)dstHeaderPtr, 20);
 
-                        if (statePtr[0] == 0U)
-                            Console.WriteLine("First uint is zero.");
+                        // finalize hash
+                        byte[] finalHash = Sha256.AllocateHashBuffer();
+                        fixed (byte* finalHashPtr = finalHash)
+                            Sha256.Finalize(state2Ptr, finalHashPtr);
 
-                        if (statePtr[7] == 0U)
-                            Console.WriteLine("Last uint is zero.");
+                        // encode for display purposes
+                        var encodedHash = Memory.Encode(finalHash);
+
+                        // display message indicating submission
+                        Console.WriteLine();
+                        Console.WriteLine();
+                        Console.WriteLine("Submitting: {0}", encodedHash);
 
                         // submit work for completion
-                        if (!ctx.SubmitWork(work))
-                            Console.WriteLine("Invalid hash submitted");
+                        if (ctx.SubmitWork(work))
+                            Console.WriteLine("Success: {0}", encodedHash);
+                        else
+                            Console.WriteLine("Failure: {0}", encodedHash);
+
+                        Console.WriteLine();
+                        Console.WriteLine();
                     }
 
                     // update the nonce value

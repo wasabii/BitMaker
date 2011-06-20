@@ -1,5 +1,4 @@
-﻿using System;
-using System.Threading;
+﻿using System.Threading;
 
 namespace BitMaker.Miner.Plugin
 {
@@ -14,7 +13,12 @@ namespace BitMaker.Miner.Plugin
         /// <summary>
         /// Gets a token that will signal when the work should no longer be processed.
         /// </summary>
-        public CancellationToken Token { get; set; }
+        public CancellationToken CancellationToken { get; set; }
+
+        /// <summary>
+        /// Gets or sets the header data.
+        /// </summary>
+        public BlockHeader Header2 { get; set; }
 
         /// <summary>
         /// Gets or sets the header data.
@@ -25,8 +29,6 @@ namespace BitMaker.Miner.Plugin
         /// Gets or sets the target data.
         /// </summary>
         public byte[] Target { get; set; }
-
-        public byte[] Midstate { get; set; }
 
     }
 

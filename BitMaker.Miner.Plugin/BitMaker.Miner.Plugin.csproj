@@ -36,6 +36,7 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BlockHeader.cs" />
     <Compile Include="IPluginContext.cs" />
     <Compile Include="PluginAttribute.cs" />
     <Compile Include="IPlugin.cs" />

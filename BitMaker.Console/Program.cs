@@ -17,13 +17,15 @@ namespace BitMaker.Console
             engine.Start();
 
             global::System.Console.WriteLine();
+            global::System.Console.WriteLine();
 
+            // render hash statistics
             var timer = new Timer(TimerCallback, null, 0, 2000);
 
+            // wait for input from user to terminate
             global::System.Console.ReadLine();
+            timer.Dispose();
             engine.Stop();
-
-            GC.KeepAlive(timer);
         }
 
         private static void TimerCallback(object state)

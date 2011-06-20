@@ -16,6 +16,8 @@
                 Height="*" />
         </Grid.RowDefinitions>
         <TextBox
-            x:Name="OutputTextBox" />
+            x:Name="OutputTextBox"
+            VerticalScrollBarVisibility="Visible"
+            IsReadOnly="True" />
     </Grid>
 </Window>

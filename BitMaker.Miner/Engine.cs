@@ -25,34 +25,24 @@ namespace BitMaker.Miner
         private object syncRoot = new object();
 
         /// <summary>
-        /// Signals that we should stop.
+        /// Ensures we don't start or stop multiple times.
         /// </summary>
-        private CancellationTokenSource cancellation;
-
-        /// <summary>
-        /// Number of units of work that should be kept outstanding.
-        /// </summary>
-        private const int WORKPOOL_LIMIT = 5;
-
-        /// <summary>
-        /// Thread that keeps the work pool full.
-        /// </summary>
-        private Thread workPoolThread;
-
-        /// <summary>
-        /// Available work. Most recent work at the beginning.
-        /// </summary>
-        private LinkedList<Work> workPool;
+        private bool started = false;
 
         /// <summary>
         /// Number of milliseconds after which to expire work.
         /// </summary>
-        private const int WORK_AGE_MAX = 15000;
+        private static int workAgeMax = (int)TimeSpan.FromMinutes(2).TotalMilliseconds;
+
+        /// <summary>
+        /// Stores the last known value of the previous hash.
+        /// </summary>
+        private static int previousHash;
 
         /// <summary>
         /// Milliseconds between recalculation of statistics.
         /// </summary>
-        private const int STATISTICS_PERIOD = 1000;
+        private static int statisticsPeriod = (int)TimeSpan.FromSeconds(3).TotalMilliseconds;
 
         /// <summary>
         /// Timer that fires to collect statistics.
@@ -91,16 +81,11 @@ namespace BitMaker.Miner
         {
             lock (syncRoot)
             {
-                // will let us stop various processes later
-                cancellation = new CancellationTokenSource();
-
-                // thread that ensures there is work available in the pool
-                workPool = new LinkedList<Work>();
-                workPoolThread = new Thread(WorkPoolThread);
-                workPoolThread.Start();
+                if (started)
+                    return;
 
                 // recalculate statistics periodically
-                statisticsTimer = new Timer(CalculateStatistics, null, 0, STATISTICS_PERIOD);
+                statisticsTimer = new Timer(CalculateStatistics, null, 0, statisticsPeriod);
 
                 // start each plugin
                 foreach (var i in Plugins)
@@ -108,6 +93,8 @@ namespace BitMaker.Miner
                     Console.WriteLine("Starting: {0}", i.GetType().Name);
                     i.Start(this);
                 }
+
+                started = true;
             }
         }
 
@@ -118,6 +105,9 @@ namespace BitMaker.Miner
         {
             lock (syncRoot)
             {
+                if (!started)
+                    return;
+
                 // shut down each plugin
                 foreach (var i in Plugins)
                 {
@@ -125,17 +115,13 @@ namespace BitMaker.Miner
                     i.Stop();
                 }
 
-                // cancel various processes
-                cancellation.Cancel();
-                lock (workPool) Monitor.PulseAll(workPool);
-                workPoolThread.Join();
-
-                // stop updating statistics
                 statisticsTimer.Dispose();
+                statisticsTimer = null;
 
                 // clear statistics
                 hashCount = 0;
                 hashesPerSecond = 0;
+                started = false;
             }
         }
 
@@ -153,27 +139,7 @@ namespace BitMaker.Miner
         /// <returns></returns>
         public Work GetWork()
         {
-            Work work = null;
-
-            while (work == null)
-                lock (workPool)
-                {
-                    // obtain first item
-                    while (workPool.First == null && !cancellation.IsCancellationRequested)
-                        Monitor.Wait(workPool, 2000);
-
-                    // pop node out of list
-                    work = workPool.First != null ? workPool.First.Value : null;
-                    if (work != null)
-                        workPool.RemoveFirst();
-
-                    Monitor.PulseAll(workPool);
-
-                    if (cancellation.IsCancellationRequested)
-                        return null;
-                }
-
-            return work;
+            return GetWorkImpl();
         }
 
         /// <summary>
@@ -197,46 +163,6 @@ namespace BitMaker.Miner
         }
 
         /// <summary>
-        /// Ensures there is always uptodate work available in the pool.
-        /// </summary>
-        private void WorkPoolThread()
-        {
-            while (!cancellation.IsCancellationRequested)
-            {
-                // wait until we are signaled
-                lock (workPool)
-                    while (workPool.Count >= WORKPOOL_LIMIT && !cancellation.IsCancellationRequested)
-                        Monitor.Wait(workPool, 2000);
-
-                // obtain new work without locking pool, if required
-                var work = workPool.Count < WORKPOOL_LIMIT ? GetWorkImpl() : null;
-
-                lock (workPool)
-                {
-                    // add the new item, if we obtained it
-                    if (work != null)
-                    {
-                        workPool.AddFirst(work);
-
-                        // when the item we're adding is expired, we might want to rescan the pool
-                        work.Token.Register(() =>
-                        {
-                            lock (workPool)
-                                Monitor.PulseAll(workPool);
-                        });
-                    }
-
-                    // scrape expired items off the bottom
-                    while (workPool.Last != null && workPool.Last.Value.Token.IsCancellationRequested)
-                        workPool.RemoveLast();
-
-                    // let anybody waiting on new items know
-                    Monitor.PulseAll(workPool);
-                }
-            }
-        }
-
-        /// <summary>
         /// Recalculates statistics.
         /// </summary>
         /// <param name="state"></param>
@@ -245,7 +171,7 @@ namespace BitMaker.Miner
             int hc = Interlocked.Exchange(ref hashCount, 0);
 
             // average the previous value with the new value
-            hashesPerSecond = (hashesPerSecond + (hc / (STATISTICS_PERIOD / 1000))) / 2;
+            hashesPerSecond = (hashesPerSecond + (hc / (statisticsPeriod / 1000))) / 2;
         }
 
         #region JSON-RPC
@@ -265,6 +191,7 @@ namespace BitMaker.Miner
             req.Credentials = new NetworkCredential(user[0], user[1]);
             req.PreAuthenticate = true;
             req.Method = "POST";
+            req.Pipelined = true;
             return req;
         }
 
@@ -272,7 +199,7 @@ namespace BitMaker.Miner
         /// Invokes the 'getwork' JSON method and parses the result into a new <see cref="T:Work"/> instance.
         /// </summary>
         /// <returns></returns>
-        private static Work GetWorkImpl()
+        private static unsafe Work GetWorkImpl()
         {
             var req = RpcOpen();
 
@@ -310,16 +237,15 @@ namespace BitMaker.Miner
 
                 // create a timer which cancels the work after a period
                 var cts = new CancellationTokenSource();
-                var tmr = new Timer(i => cts.Cancel(), null, WORK_AGE_MAX, Timeout.Infinite);
+                var tmr = new Timer(i => cts.Cancel(), null, workAgeMax, Timeout.Infinite);
                 cts.Token.Register(() => tmr.Dispose());
 
                 // generate new work instance
                 var work = new Work()
                 {
-                    Token = cts.Token,
+                    CancellationToken = cts.Token,
                     Header = Memory.Decode(result.Data),
                     Target = Memory.Decode(result.Target),
-                    Midstate = Memory.Decode(result.Midstate),
                 };
 
                 if (work.Header == null || work.Header.Length != 128)
@@ -327,6 +253,21 @@ namespace BitMaker.Miner
 
                 if (work.Target == null || work.Target.Length != 32)
                     throw new InvalidDataException("Received target is not valid.");
+
+                byte[] newHeader = new byte[80];
+                Array.Copy(work.Header, newHeader, 80);
+
+                fixed (byte* headerPtr = newHeader)
+                {
+                    Memory.ReverseEndian((uint*)headerPtr, 20);
+                    var window = (BlockHeaderWindow*)headerPtr;
+                    var version = window->Version;
+                    var previousHash = window->PreviousHash;
+                    var merkleRoot = window->MerkleRoot;
+                    var difficulty = window->Difficulty;
+                    var timestamp = window->Timestamp;
+                    var nonce = window->Nonce;
+                }
 
                 return work;
             }
@@ -342,17 +283,19 @@ namespace BitMaker.Miner
         {
             var req = RpcOpen();
 
-            // copy passed header data to new header buffer
+            // header needs to have SHA-256 padding appended
             var data = Sha256.AllocateInputBuffer(80);
-            Array.Copy(work.Header, data, 80);
 
             // prepare header buffer with SHA-256
             Sha256.Prepare(data, 80, 0);
             Sha256.Prepare(data, 80, 1);
 
-            // server expects buffer endian reversed
-            fixed (byte* dataPtr = data)
-                Memory.ReverseEndian((uint*)dataPtr, Sha256.SHA256_BLOCK_SIZE * 2 / 8);
+            // dump header data on top of padding
+            Array.Copy(work.Header, data, 80);
+
+            // encode in proper format
+            var param = Memory.Encode(data);
+            Console.WriteLine("Submitting Param: {0}", param);
 
             using (var txt = new StreamWriter(req.GetRequestStream()))
             using (var wrt = new JsonTextWriter(txt))
@@ -362,7 +305,7 @@ namespace BitMaker.Miner
                 wrt.WriteString("getwork");
                 wrt.WriteMember("params");
                 wrt.WriteStartArray();
-                wrt.WriteString(Memory.Encode(data));
+                wrt.WriteString(param);
                 wrt.WriteEndArray();
                 wrt.WriteEndObject();
                 wrt.Flush();

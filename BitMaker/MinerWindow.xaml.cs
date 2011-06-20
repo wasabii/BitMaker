@@ -1,6 +1,6 @@
-﻿using System.Windows;
+﻿using System;
+using System.Windows;
 using System.Windows.Threading;
-using System;
 
 namespace BitMaker
 {
@@ -49,7 +49,10 @@ namespace BitMaker
         private void Timer_Tick(object sender, EventArgs args)
         {
             if (View != null && View.Engine != null)
-                OutputTextBox.AppendText(string.Format("{0,10:0,000}hps\n", View.Engine.HashesPerSecond));
+            {
+                OutputTextBox.AppendText(string.Format("{0,10:0,000} khash/s\n", View.Engine.HashesPerSecond / 1000));
+                OutputTextBox.ScrollToEnd();
+            }
         }
 
     }
