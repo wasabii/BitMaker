@@ -12,6 +12,8 @@ namespace BitMaker
     public partial class App : Application
     {
 
+        private static TimeSpan idleThreshold = ConfigurationSection.GetDefaultSection().IdleThreshold;
+
         public Engine Engine { get; private set; }
 
         /// <summary>
@@ -70,19 +72,11 @@ namespace BitMaker
         /// <param name="args"></param>
         private void timer_Tick(object sender, EventArgs args)
         {
-            // current milliseconds
-            var now = GetTickCount();
-
-            // last millisecond value of input
-            var str = new LASTINPUTINFO();
-            str.cbSize = (uint)Marshal.SizeOf(str);
-            GetLastInputInfo(ref str);
-            var lastInput = str.dwTime;
-
             // derive the timespan since the system went idle
-            var idleTime = new TimeSpan(0, 0, 0, 0, (int)now - (int)lastInput);
-            
-            if (idle && idleTime < TimeSpan.FromSeconds(10))
+            var idleFor = new TimeSpan(0, 0, 0, 0, (int)GetTickCount() - (int)GetLastInputTickCount());
+
+            // check for idleness and start or stop the engine
+            if (idle && idleFor < idleThreshold)
                 Engine.Stop();
             else
                 Engine.Start();
@@ -98,19 +92,48 @@ namespace BitMaker
             Engine.Stop();
         }
 
+        /// <summary>
+        /// Obtains the current tick.
+        /// </summary>
+        /// <returns></returns>
         [DllImport("kernel32.dll")]
         private static extern uint GetTickCount();
 
-        [DllImport("user32.dll")]
-        private static extern bool GetLastInputInfo(ref LASTINPUTINFO plii);
+        /// <summary>
+        /// Obtains the tick the system last received input.
+        /// </summary>
+        /// <param name="plii"></param>
+        /// <returns></returns>
+        [DllImport("user32.dll", EntryPoint="GetLastInputInfo")]
+        private static extern bool _GetLastInputInfo(ref LASTINPUTINFO plii);
 
-        internal struct LASTINPUTINFO
+        /// <summary>
+        /// Internal structure to store the results of GetLastInputInfo.
+        /// </summary>
+        private struct LASTINPUTINFO
         {
 
             public uint cbSize;
 
             public uint dwTime;
 
+        }
+
+        /// <summary>
+        /// Obtains the tick at which the system last received input.
+        /// </summary>
+        /// <returns></returns>
+        private uint GetLastInputTickCount()
+        {
+            // structure to hold result
+            var str = new LASTINPUTINFO();
+            str.cbSize = (uint)Marshal.SizeOf(str);
+
+            // invoke native function
+            _GetLastInputInfo(ref str);
+
+            // extract and return result
+            return str.dwTime;
         }
 
     }

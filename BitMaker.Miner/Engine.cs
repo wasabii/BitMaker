@@ -138,7 +138,47 @@ namespace BitMaker.Miner
         /// <returns></returns>
         public Work GetWork()
         {
-            return GetWorkImpl();
+            return Retry(GetWorkImpl, TimeSpan.FromSeconds(5));
+        }
+
+        /// <summary>
+        /// Invokes the given function repeatidly, until it succeeds, with a delay.
+        /// </summary>
+        /// <typeparam name="R"></typeparam>
+        /// <param name="func"></param>
+        /// <param name="delay"></param>
+        /// <returns></returns>
+        private R Retry<R>(Func<R> func, TimeSpan delay)
+        {
+            while (true)
+                try
+                {
+                    return func();
+                }
+                catch (Exception)
+                {
+                    Thread.Sleep(delay);
+                }
+        }
+
+        /// <summary>
+        /// Invokes the given function repeatidly, until it succeeds, with a delay.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="func"></param>
+        /// <param name="delay"></param>
+        /// <returns></returns>
+        private R Retry<T, R>(Func<T, R> func, T arg0, TimeSpan delay)
+        {
+            while (true)
+                try
+                {
+                    return func(arg0);
+                }
+                catch (Exception)
+                {
+                    Thread.Sleep(delay);
+                }
         }
 
         /// <summary>
@@ -148,7 +188,7 @@ namespace BitMaker.Miner
         /// <returns></returns>
         public bool SubmitWork(Work work)
         {
-            return SubmitWorkImpl(work);
+            return Retry(SubmitWorkImpl, work, TimeSpan.FromSeconds(5));
         }
 
         /// <summary>
