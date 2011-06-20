@@ -168,10 +168,10 @@ namespace BitMaker.Utils
         }
 
         /// <summary>
-        /// Updates the hash state <paramref name="state"/> with the input values. Both <param name="block"/> and
-        /// <param name="state"/> are expected to be in host byte order and SHA256_HASH_SIZE in length.
+        /// Updates the hash state <paramref name="state"/> with the input values, writing the new state into <param
+        /// name="dst"/>.
         /// </summary>
-        public static unsafe void Transform(uint* state, byte* block)
+        public static unsafe void Transform(uint* state, byte* block, uint* dst)
         {
             uint a, b, c, d, e, f, g, h, t1, t2;
             uint* W = stackalloc uint[64];
@@ -182,8 +182,15 @@ namespace BitMaker.Utils
             for (int i = 16; i < 64; i++)
                 W[i] = sigma1(W[i - 2]) + W[i - 7] + sigma0(W[i - 15]) + W[i - 16];
 
-            a = state[0]; b = state[1]; c = state[2]; d = state[3];
-            e = state[4]; f = state[5]; g = state[6]; h = state[7];
+            // read existing state
+            a = state[0];
+            b = state[1];
+            c = state[2];
+            d = state[3];
+            e = state[4];
+            f = state[5];
+            g = state[6];
+            h = state[7];
 
             t1 = h + Sigma1(e) + Ch(e, f, g) + 0x428a2f98 + W[0];
             t2 = Sigma0(a) + Maj(a, b, c); d += t1; h = t1 + t2;
@@ -321,8 +328,26 @@ namespace BitMaker.Utils
             t1 = a + Sigma1(f) + Ch(f, g, h) + 0xc67178f2 + W[63];
             t2 = Sigma0(b) + Maj(b, c, d); e += t1; a = t1 + t2;
 
-            state[0] += a; state[1] += b; state[2] += c; state[3] += d;
-            state[4] += e; state[5] += f; state[6] += g; state[7] += h;
+            // write new state
+            dst[0] = state[0] + a;
+            dst[1] = state[1] + b;
+            dst[2] = state[2] + c;
+            dst[3] = state[3] + d;
+            dst[4] = state[4] + e;
+            dst[5] = state[5] + f;
+            dst[6] = state[6] + g;
+            dst[7] = state[7] + h;
+        }
+
+        /// <summary>
+        /// Updates the hash state <paramref name="state"/> with the input values, writing the new state back into
+        /// <paramref name="state" />
+        /// </summary>
+        /// <param name="state"></param>
+        /// <param name="block"></param>
+        public static unsafe void Transform(uint* state, byte* block)
+        {
+            Transform(state, block, state);
         }
 
         public static unsafe void Finalize(uint* state, byte* output)

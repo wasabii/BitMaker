@@ -105,8 +105,7 @@ namespace BitMaker.Miner.Plugin.Cpu
                 while (nonce < uint.MaxValue)
                 {
                     // transform variable second half of block using saved state
-                    Memory.Copy(midstatePtr, statePtr, Sha256.SHA256_STATE_SIZE);
-                    Sha256.Transform(statePtr, dataPtr + Sha256.SHA256_BLOCK_SIZE);
+                    Sha256.Transform(midstatePtr, dataPtr + Sha256.SHA256_BLOCK_SIZE, statePtr);
                     // Sha256.Finalize(statePtr, hashPtr); // no need to finalize, rehashing same value
 
                     // compute second hash
