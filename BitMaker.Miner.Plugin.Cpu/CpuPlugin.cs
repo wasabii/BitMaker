@@ -97,6 +97,9 @@ namespace BitMaker.Miner.Plugin.Cpu
         /// <param name="work"></param>
         private unsafe void Work(Work work)
         {
+            // starting number so we can detect when it changes
+            var currentBlockNumber = ctx.CurrentBlockNumber;
+
             /* This procedure is optimized based on the internals of the SHA-256 algorithm. As each block is transformed,
              * the state variable is updated. Finalizing the hash consists of reversing the byte order of the state.
              * Data to be hashed needs to have it's byte order reversed. Instead of reversing the first state to obtain
@@ -158,6 +161,10 @@ namespace BitMaker.Miner.Plugin.Cpu
                     {
                         ctx.ReportHashes(this, 1024);
                         if (work.CancellationToken.IsCancellationRequested || cts.IsCancellationRequested)
+                            break;
+
+                        // current block number has changed, our work is invalid
+                        if (currentBlockNumber != ctx.CurrentBlockNumber)
                             break;
                     }
 

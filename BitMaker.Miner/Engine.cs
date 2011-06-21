@@ -34,9 +34,9 @@ namespace BitMaker.Miner
         private static int workAgeMax = (int)TimeSpan.FromMinutes(2).TotalMilliseconds;
 
         /// <summary>
-        /// Stores the last known value of the previous hash.
+        /// Gets the current block number
         /// </summary>
-        private static int previousHash;
+        public int CurrentBlockNumber { get; private set; }
 
         /// <summary>
         /// Milliseconds between recalculation of statistics.
@@ -71,6 +71,9 @@ namespace BitMaker.Miner
         {
             // import available plugins
             new CompositionContainer(new DirectoryCatalog(".", "*.dll")).SatisfyImportsOnce(this);
+
+            // default value
+            CurrentBlockNumber = -1;
         }
 
         /// <summary>
@@ -239,7 +242,7 @@ namespace BitMaker.Miner
         /// Invokes the 'getwork' JSON method and parses the result into a new <see cref="T:Work"/> instance.
         /// </summary>
         /// <returns></returns>
-        private static unsafe Work GetWorkImpl()
+        private unsafe Work GetWorkImpl()
         {
             var req = RpcOpen();
 
@@ -259,8 +262,14 @@ namespace BitMaker.Miner
                 wrt.Flush();
             }
 
+            var httpResponse = req.GetResponse();
+
+            // update current block number
+            if (httpResponse.Headers["X-Blocknum"] != null)
+                CurrentBlockNumber = int.Parse(httpResponse.Headers["X-Blocknum"]);
+
             // retrieve invocation response
-            using (var txt = new StreamReader(req.GetResponse().GetResponseStream()))
+            using (var txt = new StreamReader(httpResponse.GetResponseStream()))
             using (var rdr = new JsonTextReader(txt))
             {
                 if (!rdr.MoveToContent() && rdr.Read())
