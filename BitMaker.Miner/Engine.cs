@@ -231,6 +231,7 @@ namespace BitMaker.Miner
             req.PreAuthenticate = true;
             req.Method = "POST";
             req.Pipelined = true;
+            req.UserAgent = "BitMaker (" + Environment.MachineName.ToLower() + ")";
             return req;
         }
 
@@ -294,21 +295,6 @@ namespace BitMaker.Miner
 
                 if (work.Target == null || work.Target.Length != 32)
                     throw new InvalidDataException("Received target is not valid.");
-
-                byte[] newHeader = new byte[80];
-                Array.Copy(work.Header, newHeader, 80);
-
-                fixed (byte* headerPtr = newHeader)
-                {
-                    Memory.ReverseEndian((uint*)headerPtr, 20);
-                    var window = (BlockHeaderWindow*)headerPtr;
-                    var version = window->Version;
-                    var previousHash = window->PreviousHash;
-                    var merkleRoot = window->MerkleRoot;
-                    var difficulty = window->Difficulty;
-                    var timestamp = window->Timestamp;
-                    var nonce = window->Nonce;
-                }
 
                 return work;
             }
