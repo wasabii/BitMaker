@@ -247,6 +247,8 @@ namespace BitMaker.Miner
             using (var wrt = new JsonTextWriter(txt))
             {
                 wrt.WriteStartObject();
+                wrt.WriteMember("id");
+                wrt.WriteString("json");
                 wrt.WriteMember("method");
                 wrt.WriteString("getwork");
                 wrt.WriteMember("params");
@@ -333,18 +335,19 @@ namespace BitMaker.Miner
             Array.Copy(work.Header, data, 80);
 
             // encode in proper format
-            var param = Memory.Encode(data);
-            Console.WriteLine("Submitting Param: {0}", param);
+            var solution = Memory.Encode(data);
 
             using (var txt = new StreamWriter(req.GetRequestStream()))
             using (var wrt = new JsonTextWriter(txt))
             {
                 wrt.WriteStartObject();
+                wrt.WriteMember("id");
+                wrt.WriteString("json");
                 wrt.WriteMember("method");
                 wrt.WriteString("getwork");
                 wrt.WriteMember("params");
                 wrt.WriteStartArray();
-                wrt.WriteString(param);
+                wrt.WriteString(solution);
                 wrt.WriteEndArray();
                 wrt.WriteEndObject();
                 wrt.Flush();

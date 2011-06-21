@@ -162,7 +162,7 @@ namespace BitMaker.Miner.Plugin.Cpu
                     }
 
                     // the hash is byte order flipped state, quick check that state passes a test before doing work
-                    if (state2Ptr[0] == 0U || state2Ptr[7] == 0U)
+                    if (state2Ptr[7] == 0U)
                     {
                         // replace header data on work
                         work.Header = new byte[80];
@@ -174,19 +174,22 @@ namespace BitMaker.Miner.Plugin.Cpu
                         fixed (byte* finalHashPtr = finalHash)
                             Sha256.Finalize(state2Ptr, finalHashPtr);
 
+                        // bitcoin hashes are byte order flipped SHA-256 hashes
+                        Array.Reverse(finalHash);
+
                         // encode for display purposes
-                        var encodedHash = Memory.Encode(finalHash);
+                        var blockHash = Memory.Encode(finalHash);
 
                         // display message indicating submission
                         Console.WriteLine();
                         Console.WriteLine();
-                        Console.WriteLine("Submitting: {0}", encodedHash);
+                        Console.WriteLine("SOLUTION: {0}", blockHash);
 
                         // submit work for completion
                         if (ctx.SubmitWork(work))
-                            Console.WriteLine("Success: {0}", encodedHash);
+                            Console.WriteLine("ACCEPTED: {0}", blockHash);
                         else
-                            Console.WriteLine("Failure: {0}", encodedHash);
+                            Console.WriteLine("REJECTED: {0}", blockHash);
 
                         Console.WriteLine();
                         Console.WriteLine();
