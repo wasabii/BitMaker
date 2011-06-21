@@ -35,7 +35,7 @@ namespace BitMaker.Miner.Plugin.Cpu
                 this.cts = new CancellationTokenSource();
 
                 // create work threads
-                workThreads = new Thread[Environment.ProcessorCount * 2];
+                workThreads = new Thread[Environment.ProcessorCount + 1];
                 for (int i = 0; i < workThreads.Length; i++)
                 {
                     workThreads[i] = new Thread(WorkThread)
