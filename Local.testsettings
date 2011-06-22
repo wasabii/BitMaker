@@ -2,8 +2,14 @@
 <TestSettings name="Local" id="1afa7825-2727-427b-9def-33e4d1b7194e" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
   <Description>These are default test settings for a local test run.</Description>
   <Deployment enabled="false" />
-  <Execution>
-    <TestTypeSpecific />
+  <Execution hostProcessPlatform="MSIL">
+    <TestTypeSpecific>
+      <UnitTestRunConfig testTypeId="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b">
+        <AssemblyResolution>
+          <TestDirectory useLoadContext="true" />
+        </AssemblyResolution>
+      </UnitTestRunConfig>
+    </TestTypeSpecific>
     <AgentRule name="Execution Agents">
     </AgentRule>
   </Execution>

@@ -36,6 +36,7 @@ namespace BitMaker.Miner.Plugin.Cpu
 
                 // create work threads
                 workThreads = new Thread[Environment.ProcessorCount + 1];
+                //workThreads = new Thread[1];
                 for (int i = 0; i < workThreads.Length; i++)
                 {
                     workThreads[i] = new Thread(WorkThread)
@@ -128,7 +129,7 @@ namespace BitMaker.Miner.Plugin.Cpu
                     Memory.ReverseEndian((uint*)workHeaderPtr, (uint*)dataPtr, 20);
                 else
                     // simply copy if conversion not required
-                    Memory.Copy((uint*)workHeaderPtr, (uint*)dataPtr, 20);
+                    Memory.Copy(workHeaderPtr, dataPtr, 80);
 
                 // append '1' bit and trailing length
                 Sha256.Prepare(dataPtr, 80, 0);

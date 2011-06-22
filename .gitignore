@@ -18,3 +18,5 @@
 /BitMaker.Utils/bin
 /BitMaker.Utils/obj
 /TestResults
+/x64
+/BitMaker.Utils.Native/x64

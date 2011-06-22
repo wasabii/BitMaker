@@ -234,7 +234,8 @@ namespace BitMaker.Miner
             req.PreAuthenticate = true;
             req.Method = "POST";
             req.Pipelined = true;
-            req.UserAgent = "BitMaker (" + Environment.MachineName.ToLower() + ")";
+            req.UserAgent = "BitMaker";
+            req.Headers["X-MachineName"] = Environment.MachineName;
             return req;
         }
 
