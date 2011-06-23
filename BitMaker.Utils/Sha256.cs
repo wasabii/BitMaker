@@ -176,11 +176,72 @@ namespace BitMaker.Utils
             uint a, b, c, d, e, f, g, h, t1, t2;
             uint* W = stackalloc uint[64];
 
-            for (int i = 0; i < 16; i++)
-                W[i] = ((uint*)block)[i];
+            // copy 16 ints out of block
+            //for (int i = 0; i < 16; i++)
+            //    W[i] = ((uint*)block)[i];
 
-            for (int i = 16; i < 64; i++)
-                W[i] = sigma1(W[i - 2]) + W[i - 7] + sigma0(W[i - 15]) + W[i - 16];
+            // unrolled for 64-bit version
+            ((IntPtr*)W)[0] = ((IntPtr*)block)[0];
+            ((IntPtr*)W)[1] = ((IntPtr*)block)[1];
+            ((IntPtr*)W)[2] = ((IntPtr*)block)[2];
+            ((IntPtr*)W)[3] = ((IntPtr*)block)[3];
+            ((IntPtr*)W)[4] = ((IntPtr*)block)[4];
+            ((IntPtr*)W)[5] = ((IntPtr*)block)[5];
+            ((IntPtr*)W)[6] = ((IntPtr*)block)[6];
+            ((IntPtr*)W)[7] = ((IntPtr*)block)[7];
+
+            //for (int i = 16; i < 64; i++)
+            //    W[i] = sigma1(W[i - 2]) + W[i - 7] + sigma0(W[i - 15]) + W[i - 16];
+
+            // unrolled
+            W[16] = sigma1(W[16 - 2]) + W[16 - 7] + sigma0(W[16 - 15]) + W[16 - 16];
+            W[17] = sigma1(W[17 - 2]) + W[17 - 7] + sigma0(W[17 - 15]) + W[17 - 16];
+            W[18] = sigma1(W[18 - 2]) + W[18 - 7] + sigma0(W[18 - 15]) + W[18 - 16];
+            W[19] = sigma1(W[19 - 2]) + W[19 - 7] + sigma0(W[19 - 15]) + W[19 - 16];
+            W[20] = sigma1(W[20 - 2]) + W[20 - 7] + sigma0(W[20 - 15]) + W[20 - 16];
+            W[21] = sigma1(W[21 - 2]) + W[21 - 7] + sigma0(W[21 - 15]) + W[21 - 16];
+            W[22] = sigma1(W[22 - 2]) + W[22 - 7] + sigma0(W[22 - 15]) + W[22 - 16];
+            W[23] = sigma1(W[23 - 2]) + W[23 - 7] + sigma0(W[23 - 15]) + W[23 - 16];
+            W[24] = sigma1(W[24 - 2]) + W[24 - 7] + sigma0(W[24 - 15]) + W[24 - 16];
+            W[25] = sigma1(W[25 - 2]) + W[25 - 7] + sigma0(W[25 - 15]) + W[25 - 16];
+            W[26] = sigma1(W[26 - 2]) + W[26 - 7] + sigma0(W[26 - 15]) + W[26 - 16];
+            W[27] = sigma1(W[27 - 2]) + W[27 - 7] + sigma0(W[27 - 15]) + W[27 - 16];
+            W[28] = sigma1(W[28 - 2]) + W[28 - 7] + sigma0(W[28 - 15]) + W[28 - 16];
+            W[29] = sigma1(W[29 - 2]) + W[29 - 7] + sigma0(W[29 - 15]) + W[29 - 16];
+            W[30] = sigma1(W[30 - 2]) + W[30 - 7] + sigma0(W[30 - 15]) + W[30 - 16];
+            W[31] = sigma1(W[31 - 2]) + W[31 - 7] + sigma0(W[31 - 15]) + W[31 - 16];
+            W[32] = sigma1(W[32 - 2]) + W[32 - 7] + sigma0(W[32 - 15]) + W[32 - 16];
+            W[33] = sigma1(W[33 - 2]) + W[33 - 7] + sigma0(W[33 - 15]) + W[33 - 16];
+            W[34] = sigma1(W[34 - 2]) + W[34 - 7] + sigma0(W[34 - 15]) + W[34 - 16];
+            W[35] = sigma1(W[35 - 2]) + W[35 - 7] + sigma0(W[35 - 15]) + W[35 - 16];
+            W[36] = sigma1(W[36 - 2]) + W[36 - 7] + sigma0(W[36 - 15]) + W[36 - 16];
+            W[37] = sigma1(W[37 - 2]) + W[37 - 7] + sigma0(W[37 - 15]) + W[37 - 16];
+            W[38] = sigma1(W[38 - 2]) + W[38 - 7] + sigma0(W[38 - 15]) + W[38 - 16];
+            W[39] = sigma1(W[39 - 2]) + W[39 - 7] + sigma0(W[39 - 15]) + W[39 - 16];
+            W[40] = sigma1(W[40 - 2]) + W[40 - 7] + sigma0(W[40 - 15]) + W[40 - 16];
+            W[41] = sigma1(W[41 - 2]) + W[41 - 7] + sigma0(W[41 - 15]) + W[41 - 16];
+            W[42] = sigma1(W[42 - 2]) + W[42 - 7] + sigma0(W[42 - 15]) + W[42 - 16];
+            W[43] = sigma1(W[43 - 2]) + W[43 - 7] + sigma0(W[43 - 15]) + W[43 - 16];
+            W[44] = sigma1(W[44 - 2]) + W[44 - 7] + sigma0(W[44 - 15]) + W[44 - 16];
+            W[45] = sigma1(W[45 - 2]) + W[45 - 7] + sigma0(W[45 - 15]) + W[45 - 16];
+            W[46] = sigma1(W[46 - 2]) + W[46 - 7] + sigma0(W[46 - 15]) + W[46 - 16];
+            W[47] = sigma1(W[47 - 2]) + W[47 - 7] + sigma0(W[47 - 15]) + W[47 - 16];
+            W[48] = sigma1(W[48 - 2]) + W[48 - 7] + sigma0(W[48 - 15]) + W[48 - 16];
+            W[49] = sigma1(W[49 - 2]) + W[49 - 7] + sigma0(W[49 - 15]) + W[49 - 16];
+            W[50] = sigma1(W[50 - 2]) + W[50 - 7] + sigma0(W[50 - 15]) + W[50 - 16];
+            W[51] = sigma1(W[51 - 2]) + W[51 - 7] + sigma0(W[51 - 15]) + W[51 - 16];
+            W[52] = sigma1(W[52 - 2]) + W[52 - 7] + sigma0(W[52 - 15]) + W[52 - 16];
+            W[53] = sigma1(W[53 - 2]) + W[53 - 7] + sigma0(W[53 - 15]) + W[53 - 16];
+            W[54] = sigma1(W[54 - 2]) + W[54 - 7] + sigma0(W[54 - 15]) + W[54 - 16];
+            W[55] = sigma1(W[55 - 2]) + W[55 - 7] + sigma0(W[55 - 15]) + W[55 - 16];
+            W[56] = sigma1(W[56 - 2]) + W[56 - 7] + sigma0(W[56 - 15]) + W[56 - 16];
+            W[57] = sigma1(W[57 - 2]) + W[57 - 7] + sigma0(W[57 - 15]) + W[57 - 16];
+            W[58] = sigma1(W[58 - 2]) + W[58 - 7] + sigma0(W[58 - 15]) + W[58 - 16];
+            W[59] = sigma1(W[59 - 2]) + W[59 - 7] + sigma0(W[59 - 15]) + W[59 - 16];
+            W[60] = sigma1(W[60 - 2]) + W[60 - 7] + sigma0(W[60 - 15]) + W[60 - 16];
+            W[61] = sigma1(W[61 - 2]) + W[61 - 7] + sigma0(W[61 - 15]) + W[61 - 16];
+            W[62] = sigma1(W[62 - 2]) + W[62 - 7] + sigma0(W[62 - 15]) + W[62 - 16];
+            W[63] = sigma1(W[63 - 2]) + W[63 - 7] + sigma0(W[63 - 15]) + W[63 - 16];
 
             // read existing state
             a = state[0];
