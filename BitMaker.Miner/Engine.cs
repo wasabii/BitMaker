@@ -39,6 +39,16 @@ namespace BitMaker.Miner
         public uint CurrentBlockNumber { get; private set; }
 
         /// <summary>
+        /// Milliseconds between refreshes of block number.
+        /// </summary>
+        private static int refreshPeriod = (int)TimeSpan.FromSeconds(15).TotalMilliseconds;
+
+        /// <summary>
+        /// Timer that pulls current block.
+        /// </summary>
+        private Timer refreshTimer;
+
+        /// <summary>
         /// Milliseconds between recalculation of statistics.
         /// </summary>
         private static int statisticsPeriod = (int)TimeSpan.FromSeconds(3).TotalMilliseconds;
@@ -89,6 +99,9 @@ namespace BitMaker.Miner
                 // recalculate statistics periodically
                 statisticsTimer = new Timer(CalculateStatistics, null, 0, statisticsPeriod);
 
+                // periodically check latest block number
+                refreshTimer = new Timer(RefreshBlock, null, 0, refreshPeriod);
+
                 // start each plugin
                 foreach (var i in Plugins)
                 {
@@ -119,6 +132,9 @@ namespace BitMaker.Miner
 
                 statisticsTimer.Dispose();
                 statisticsTimer = null;
+
+                refreshTimer.Dispose();
+                refreshTimer = null;
 
                 // clear statistics
                 hashCount = 0;
@@ -214,6 +230,15 @@ namespace BitMaker.Miner
 
             // average the previous value with the new value
             hashesPerSecond = (hashesPerSecond + (hc / (statisticsPeriod / 1000))) / 2;
+        }
+
+        /// <summary>
+        /// Refreshes latest block number by simply retrieving new work.
+        /// </summary>
+        /// <param name="state"></param>
+        private void RefreshBlock(object state)
+        {
+            GetWork();
         }
 
         #region JSON-RPC

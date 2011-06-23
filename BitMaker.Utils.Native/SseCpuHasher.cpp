@@ -93,8 +93,8 @@ bool __Solve(unsigned int *round1State, byte *round1Block1, unsigned int *round2
                 return true;
             }
 
-        if (nonce % 131072 == 0)
-            if (!check(131072))
+        if (nonce % 1048576 == 0)
+            if (!check(1048576))
                 return false;
 
         nonce += 4;

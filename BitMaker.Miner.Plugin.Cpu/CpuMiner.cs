@@ -125,6 +125,8 @@ namespace BitMaker.Miner.Plugin.Cpu
         /// <param name="work"></param>
         private unsafe void Work(Work work)
         {
+            Console.WriteLine("new work");
+
             // starting number so we can detect when it changes
             var currentBlockNumber = ctx.CurrentBlockNumber;
 
