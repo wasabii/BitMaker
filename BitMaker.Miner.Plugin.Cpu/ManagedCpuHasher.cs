@@ -5,10 +5,10 @@ using BitMaker.Utils;
 namespace BitMaker.Miner.Plugin.Cpu
 {
 
-    public class ManagedHasher : Hasher
+    public class ManagedCpuHasher : CpuHasher
     {
 
-        public override unsafe uint? Solve(CpuPlugin cpu, Work work, uint* round1State, byte* round1Block1, uint* round2State, byte* round2Block1)
+        public override unsafe uint? Solve(CpuMiner cpu, Work work, uint* round1State, byte* round1Block1, uint* round2State, byte* round2Block1)
         {
             uint nonce = 0;
 
@@ -23,18 +23,6 @@ namespace BitMaker.Miner.Plugin.Cpu
                 // transform round 2 block into round 2 state (second hash)
                 Sha256.Transform(round2State, round2Block1, round2State2);
 
-                // only report and check for exit conditions every so often
-                if (nonce % 1024 == 0 && nonce > 0)
-                {
-                    cpu.ReportHashes(1024);
-                    if (work.CancellationToken.IsCancellationRequested || cpu.IsCancellationRequested)
-                        return null;
-
-                    // current block number has changed, our work is invalid
-                    if (work.BlockNumber < cpu.CurrentBlockNumber)
-                        break;
-                }
-
                 // test for potentially valid hash
                 if (round2State2[7] == 0U)
                     return nonce;
@@ -45,6 +33,18 @@ namespace BitMaker.Miner.Plugin.Cpu
 
                 // update the nonce value
                 ((uint*)round1Block2)[3] = Memory.ReverseEndian(++nonce);
+
+                // only report and check for exit conditions every so often
+                if (nonce % 1024 == 0)
+                {
+                    cpu.ReportHashes(1024);
+                    if (work.CancellationToken.IsCancellationRequested || cpu.IsCancellationRequested)
+                        return null;
+
+                    // current block number has changed, our work is invalid
+                    if (work.BlockNumber < cpu.CurrentBlockNumber)
+                        break;
+                }
             }
 
             return null;

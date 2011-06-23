@@ -8,7 +8,7 @@ namespace BitMaker.Miner.Plugin.Cpu
 {
 
     [Miner]
-    public class CpuPlugin : IMiner
+    public class CpuMiner : IMiner
     {
 
         private readonly SHA256 sha256 = SHA256.Create();
@@ -43,7 +43,7 @@ namespace BitMaker.Miner.Plugin.Cpu
                 {
                     workThreads[i] = new Thread(WorkThread)
                     {
-                        Name = "Cpu Work Thread : " + i,
+                        Name = "CpuMiner Thread : " + i,
                         IsBackground = true,
                         Priority = ThreadPriority.Lowest,
                     };
@@ -105,10 +105,10 @@ namespace BitMaker.Miner.Plugin.Cpu
         /// <summary>
         /// Reports a hash count to the miner.
         /// </summary>
-        /// <param name="hashCount"></param>
-        internal void ReportHashes(int hashCount)
+        /// <param name="count"></param>
+        internal void ReportHashes(int count)
         {
-            ctx.ReportHashes(this, hashCount);
+            ctx.ReportHashes(this, count);
         }
 
         /// <summary>
@@ -166,18 +166,15 @@ namespace BitMaker.Miner.Plugin.Cpu
                 Sha256.Prepare(round2BlocksPtr, Sha256.SHA256_HASH_SIZE, 0);
 
                 // solve the header
-                uint? nonce = new ManagedHasher().Solve(this, work, round1StatePtr, round1BlocksPtr, round2StatePtr, round2BlocksPtr);
+                //uint? nonce = new ManagedCpuHasher().Solve(this, work, round1StatePtr, round1BlocksPtr, round2StatePtr, round2BlocksPtr);
+                uint? nonce = new SseCpuHasher().Solve(this, work, round1StatePtr, round1BlocksPtr, round2StatePtr, round2BlocksPtr);
 
                 // solution found!
                 if (nonce != null)
                 {
-                    // ensure nonce is set on header
-                    ((uint*)round1BlocksPtr)[19] = Memory.ReverseEndian((uint)nonce);
-
                     // replace header data on work
-                    work.Header = new byte[80];
-                    fixed (byte* dstHeaderPtr = work.Header)
-                        Memory.Copy((uint*)round1BlocksPtr, (uint*)dstHeaderPtr, 20);
+                    fixed (byte* headerPtr = work.Header)
+                        ((uint*)headerPtr)[19] = (uint)nonce;
 
                     // compute full hash of header using native implementation
                     var hash = Memory.Encode(sha256.ComputeHash(sha256.ComputeHash(work.Header)));

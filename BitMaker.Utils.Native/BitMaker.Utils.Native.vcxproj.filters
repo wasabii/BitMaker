@@ -11,21 +11,27 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="BitMaker.Utils.Native.h">
+    <ClInclude Include="Stdafx.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Stdafx.h">
+    <ClInclude Include="SseCpuHasher.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="sha256_sse_x64.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="BitMaker.Utils.Native.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="AssemblyInfo.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Stdafx.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SseCpuHasher.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sha256_sse_x64.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

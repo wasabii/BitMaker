@@ -39,10 +39,11 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CpuPlugin.cs" />
-    <Compile Include="ManagedHasher.cs" />
+    <Compile Include="SseCpuHasher.cs" />
+    <Compile Include="CpuMiner.cs" />
+    <Compile Include="ManagedCpuHasher.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Hasher.cs" />
+    <Compile Include="CpuHasher.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\BitMaker.Miner.Plugin\BitMaker.Miner.Plugin.csproj">

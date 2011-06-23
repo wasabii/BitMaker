@@ -1,11 +1,7 @@
-#include "stdafx.h"
+#include "Stdafx.h"
+#include "sha256_sse_x64.h"
 
-#include "BitMaker.Utils.Native.h"
-
-typedef uint8_t __sha256_block_t[64];
-typedef uint32_t __sha256_hash_t[8];
-
-#pragma unmanaged
+#pragma managed(push, off)
 
 static const uint32_t sha256_consts[] =
 {
@@ -100,16 +96,16 @@ static inline uint32_t SWAP32(const void *addr)
     //return htonl(*((uint32_t *)(addr)));
 }
 
-static inline __m128i LOAD(const __sha256_block_t *blk[4], int i)
+static inline __m128i LOAD(__sha256_block_t *blk[4], int i)
 {
     return load_epi32(SWAP32(*blk[0] + i * 4), SWAP32(*blk[1] + i * 4), SWAP32(*blk[2] + i * 4), SWAP32(*blk[3] + i * 4));
 }
 
-void __sha256_int(const __sha256_block_t *blk[4], __sha256_hash_t *hash[4])
+void __sha256_int(__sha256_hash_t *states[4], __sha256_block_t *blocks[4], __sha256_hash_t *outputs[4])
 {
-    __sha256_hash_t *h0 = hash[0], *h1 = hash[1], *h2 = hash[2], *h3 = hash[3];
-    #define load(x, i) __m128i x = load_epi32((*h0)[i], (*h1)[i], (*h2)[i], (*h3)[i])
+    __sha256_hash_t *s0 =  states[0], *s1 =  states[1], *s2 =  states[2], *s3 =  states[3];
 
+    #define load(x, i) __m128i x = load_epi32((*s0)[i], (*s1)[i], (*s2)[i], (*s3)[i])
     load(a, 0);
     load(b, 1);
     load(c, 2);
@@ -119,41 +115,40 @@ void __sha256_int(const __sha256_block_t *blk[4], __sha256_hash_t *hash[4])
     load(g, 6);
     load(h, 7); 
 
-    __m128i w0, w1, w2, w3, w4, w5, w6, w7;
-    __m128i w8, w9, w10, w11, w12, w13, w14, w15;
+    __m128i w0, w1, w2, w3, w4, w5, w6, w7, w8, w9, w10, w11, w12, w13, w14, w15;
     __m128i T1, T2;
 
-    w0 = LOAD(blk, 0);
+    w0 = LOAD(blocks, 0);
     SHA256ROUND(a, b, c, d, e, f, g, h, 0, w0); 
-    w1 = LOAD(blk, 1);
+    w1 = LOAD(blocks, 1);
     SHA256ROUND(h, a, b, c, d, e, f, g, 1, w1);
-    w2 = LOAD(blk, 2);
+    w2 = LOAD(blocks, 2);
     SHA256ROUND(g, h, a, b, c, d, e, f, 2, w2);
-    w3 = LOAD(blk, 3);
+    w3 = LOAD(blocks, 3);
     SHA256ROUND(f, g, h, a, b, c, d, e, 3, w3);
-    w4 = LOAD(blk, 4);
+    w4 = LOAD(blocks, 4);
     SHA256ROUND(e, f, g, h, a, b, c, d, 4, w4);
-    w5 = LOAD(blk, 5);
+    w5 = LOAD(blocks, 5);
     SHA256ROUND(d, e, f, g, h, a, b, c, 5, w5);
-    w6 = LOAD(blk, 6);
+    w6 = LOAD(blocks, 6);
     SHA256ROUND(c, d, e, f, g, h, a, b, 6, w6);
-    w7 = LOAD(blk, 7);
+    w7 = LOAD(blocks, 7);
     SHA256ROUND(b, c, d, e, f, g, h, a, 7, w7);
-    w8 = LOAD(blk, 8);
+    w8 = LOAD(blocks, 8);
     SHA256ROUND(a, b, c, d, e, f, g, h, 8, w8);
-    w9 = LOAD(blk, 9);
+    w9 = LOAD(blocks, 9);
     SHA256ROUND(h, a, b, c, d, e, f, g, 9, w9);
-    w10 = LOAD(blk, 10);
+    w10 = LOAD(blocks, 10);
     SHA256ROUND(g, h, a, b, c, d, e, f, 10, w10);
-    w11 = LOAD(blk, 11);
+    w11 = LOAD(blocks, 11);
     SHA256ROUND(f, g, h, a, b, c, d, e, 11, w11);
-    w12 = LOAD(blk, 12);
+    w12 = LOAD(blocks, 12);
     SHA256ROUND(e, f, g, h, a, b, c, d, 12, w12);
-    w13 = LOAD(blk, 13);
+    w13 = LOAD(blocks, 13);
     SHA256ROUND(d, e, f, g, h, a, b, c, 13, w13);
-    w14 = LOAD(blk, 14);
+    w14 = LOAD(blocks, 14);
     SHA256ROUND(c, d, e, f, g, h, a, b, 14, w14);
-    w15 = LOAD(blk, 15);
+    w15 = LOAD(blocks, 15);
     SHA256ROUND(b, c, d, e, f, g, h, a, 15, w15);
     w0 = add4(SIGMA1_256(w14), w9, SIGMA0_256(w1), w0);
     SHA256ROUND(a, b, c, d, e, f, g, h, 16, w0);
@@ -251,12 +246,12 @@ void __sha256_int(const __sha256_block_t *blk[4], __sha256_hash_t *hash[4])
     SHA256ROUND(c, d, e, f, g, h, a, b, 62, w14);
     w15 = add4(SIGMA1_256(w13), w8, SIGMA0_256(w0), w15);
     SHA256ROUND(b, c, d, e, f, g, h, a, 63, w15);
-
+    
+    __sha256_hash_t *h0 = outputs[0], *h1 = outputs[1], *h2 = outputs[2], *h3 = outputs[3];
     #define store(x,i) \
-            w0 = load_epi32((*h0)[i], (*h1)[i], (*h2)[i], (*h3)[i]); \
+            w0 = load_epi32((*s0)[i], (*s1)[i], (*s2)[i], (*s3)[i]); \
             w1 = _mm_add_epi32(w0, x); \
             store_epi32(w1, &(*h0)[i], &(*h1)[i], &(*h2)[i], &(*h3)[i])
-
     store(a, 0);
     store(b, 1);
     store(c, 2);
@@ -267,31 +262,4 @@ void __sha256_int(const __sha256_block_t *blk[4], __sha256_hash_t *hash[4])
     store(h, 7);
 }
 
-#pragma managed
-
-namespace BitMaker
-{
-
-    namespace Utils
-    {
-
-        namespace Native
-        {
-
-            public ref class Foo abstract sealed
-            {
-
-            public:
-
-                static void Hash(byte *blk[4], byte *hash[4])
-                {
-                    __sha256_int((const __sha256_block_t**)blk, (__sha256_hash_t**)hash);
-                }
-
-            };
-
-        }
-
-    }
-
-}
+#pragma managed(push, on)
