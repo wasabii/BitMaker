@@ -10,7 +10,7 @@ namespace BitMaker
 
         public event PropertyChangedEventHandler PropertyChanged;
 
-        public Engine Engine { get; set; }
+        public MinerHost Engine { get; set; }
 
     }
 

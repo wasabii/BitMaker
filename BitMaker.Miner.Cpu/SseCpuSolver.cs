@@ -1,12 +1,9 @@
 ﻿using System;
 
-using BitMaker.Utils;
-using BitMaker.Utils.Native;
-
-namespace BitMaker.Miner.Plugin.Cpu
+namespace BitMaker.Miner.Cpu
 {
 
-    public class SseCpuHasher : CpuHasher
+    public class SseCpuSolver : CpuSolver
     {
 
         public override unsafe uint? Solve(CpuMiner cpu, Work work, uint* round1State, byte* round1Block1, uint* round2State, byte* round2Block1)
@@ -18,11 +15,8 @@ namespace BitMaker.Miner.Plugin.Cpu
 
                 cpu.ReportHashes(hashCount);
 
-                if (work.CancellationToken.IsCancellationRequested || cpu.IsCancellationRequested)
-                    return false;
-
-                // current block number has changed, our work is invalid
-                if (work.BlockNumber < cpu.CurrentBlockNumber)
+                // check whether the program is terminating, or whether our work is expired
+                if (work.BlockNumber < cpu.CurrentBlockNumber || cpu.IsCancellationRequested)
                     return false;
 
                 return true;

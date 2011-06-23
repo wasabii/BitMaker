@@ -1,7 +1,7 @@
 #include "stdafx.h"
 
-#include "SseCpuHasher.h"
-#include "sha256_sse_x64.h"
+#include "SseCpuSolver.h"
+#include "sha256_sse_x64.cpp"
 
 using namespace System;
 using namespace System::Runtime::InteropServices;

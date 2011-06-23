@@ -1,7 +1,7 @@
 ﻿using System;
 using System.ComponentModel.Composition;
 
-namespace BitMaker.Miner.Plugin
+namespace BitMaker.Miner
 {
 
     /// <summary>

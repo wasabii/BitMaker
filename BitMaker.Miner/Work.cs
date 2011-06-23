@@ -1,6 +1,4 @@
-﻿using System.Threading;
-
-namespace BitMaker.Miner.Plugin
+﻿namespace BitMaker.Miner
 {
 
     /// <summary>
@@ -9,11 +7,6 @@ namespace BitMaker.Miner.Plugin
     /// </summary>
     public sealed class Work
     {
-
-        /// <summary>
-        /// Gets a token that will signal when the work should no longer be processed.
-        /// </summary>
-        public CancellationToken CancellationToken { get; set; }
 
         /// <summary>
         /// Current block number when this work was delivered.

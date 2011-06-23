@@ -90,7 +90,7 @@ static inline __m128i SHA256_CONST(int i)
         T2 = _mm_add_epi32(BIGSIGMA0_256(a), Maj(a, b, c)); \
         h = _mm_add_epi32(T1, T2)
 
-static inline uint32_t SWAP32(const void *addr)
+static inline uint32_t CONV(const void *addr)
 {
     return *((uint32_t *)(addr));
     //return htonl(*((uint32_t *)(addr)));
@@ -98,10 +98,10 @@ static inline uint32_t SWAP32(const void *addr)
 
 static inline __m128i LOAD(__sha256_block_t *blk[4], int i)
 {
-    return load_epi32(SWAP32(*blk[0] + i * 4), SWAP32(*blk[1] + i * 4), SWAP32(*blk[2] + i * 4), SWAP32(*blk[3] + i * 4));
+    return load_epi32(CONV(*blk[0] + i * 4), CONV(*blk[1] + i * 4), CONV(*blk[2] + i * 4), CONV(*blk[3] + i * 4));
 }
 
-void __sha256_int(__sha256_hash_t *states[4], __sha256_block_t *blocks[4], __sha256_hash_t *outputs[4])
+static inline void __sha256_int(__sha256_hash_t *states[4], __sha256_block_t *blocks[4], __sha256_hash_t *outputs[4])
 {
     __sha256_hash_t *s0 =  states[0], *s1 =  states[1], *s2 =  states[2], *s3 =  states[3];
 

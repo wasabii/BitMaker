@@ -1,11 +1,9 @@
-﻿using System;
+﻿using BitMaker.Utils;
 
-using BitMaker.Utils;
-
-namespace BitMaker.Miner.Plugin.Cpu
+namespace BitMaker.Miner.Cpu
 {
 
-    public class ManagedCpuHasher : CpuHasher
+    public class ManagedCpuSolver : CpuSolver
     {
 
         public override unsafe uint? Solve(CpuMiner cpu, Work work, uint* round1State, byte* round1Block1, uint* round2State, byte* round2Block1)
@@ -27,22 +25,20 @@ namespace BitMaker.Miner.Plugin.Cpu
                 if (round2State2[7] == 0U)
                     return nonce;
 
+                // update the nonce value
+                ((uint*)round1Block2)[3] = Memory.ReverseEndian(++nonce);
+
                 // at the end of our nonce values, we can't continue
                 if (nonce == uint.MaxValue)
                     break;
 
-                // update the nonce value
-                ((uint*)round1Block2)[3] = Memory.ReverseEndian(++nonce);
-
                 // only report and check for exit conditions every so often
-                if (nonce % 1024 == 0)
+                if (nonce % 8192 == 0 && nonce > 0)
                 {
-                    cpu.ReportHashes(1024);
-                    if (work.CancellationToken.IsCancellationRequested || cpu.IsCancellationRequested)
-                        return null;
+                    cpu.ReportHashes(8192);
 
                     // current block number has changed, our work is invalid
-                    if (work.BlockNumber < cpu.CurrentBlockNumber)
+                    if (work.BlockNumber < cpu.CurrentBlockNumber || cpu.IsCancellationRequested)
                         break;
                 }
             }

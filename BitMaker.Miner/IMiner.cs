@@ -1,5 +1,4 @@
-﻿
-namespace BitMaker.Miner.Plugin
+﻿namespace BitMaker.Miner
 {
 
     /// <summary>

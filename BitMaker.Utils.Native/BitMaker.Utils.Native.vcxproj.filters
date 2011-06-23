@@ -14,10 +14,10 @@
     <ClInclude Include="Stdafx.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SseCpuHasher.h">
+    <ClInclude Include="sha256_sse_x64.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="sha256_sse_x64.h">
+    <ClInclude Include="SseCpuSolver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -28,10 +28,10 @@
     <ClCompile Include="Stdafx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="SseCpuHasher.cpp">
+    <ClCompile Include="sha256_sse_x64.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="sha256_sse_x64.cpp">
+    <ClCompile Include="SseCpuSolver.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

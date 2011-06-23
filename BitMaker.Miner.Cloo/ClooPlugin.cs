@@ -5,7 +5,7 @@ using System.Reflection;
 using Cloo;
 using Cloo.Bindings;
 
-namespace BitMaker.Miner.Plugin.Cloo
+namespace BitMaker.Miner.Cloo
 {
 
     [Miner]

@@ -1,10 +1,10 @@
 ﻿using System;
+using System.Security.Cryptography;
 using System.Threading;
 
 using BitMaker.Utils;
-using System.Security.Cryptography;
 
-namespace BitMaker.Miner.Plugin.Cpu
+namespace BitMaker.Miner.Cpu
 {
 
     [Miner]
@@ -38,7 +38,7 @@ namespace BitMaker.Miner.Plugin.Cpu
 
                 // create work threads
                 workThreads = new Thread[1];
-                workThreads = new Thread[Environment.ProcessorCount + 1];
+                workThreads = new Thread[Environment.ProcessorCount];
                 for (int i = 0; i < workThreads.Length; i++)
                 {
                     workThreads[i] = new Thread(WorkThread)
@@ -138,10 +138,6 @@ namespace BitMaker.Miner.Plugin.Cpu
              * byte order swap.
              **/
 
-            // bail out on stale or no work
-            if (work == null || work.CancellationToken.IsCancellationRequested || cts.IsCancellationRequested)
-                return;
-
             // allocate buffers to hold hashing work
             byte[] round1Blocks = Sha256.AllocateInputBuffer(80);
             uint[] round1State = Sha256.AllocateStateBuffer();
@@ -168,8 +164,10 @@ namespace BitMaker.Miner.Plugin.Cpu
                 Sha256.Prepare(round2BlocksPtr, Sha256.SHA256_HASH_SIZE, 0);
 
                 // solve the header
-                //uint? nonce = new ManagedCpuHasher().Solve(this, work, round1StatePtr, round1BlocksPtr, round2StatePtr, round2BlocksPtr);
-                uint? nonce = new SseCpuHasher().Solve(this, work, round1StatePtr, round1BlocksPtr, round2StatePtr, round2BlocksPtr);
+                uint? nonce = new ManagedCpuSolver().Solve(this, work, round1StatePtr, round1BlocksPtr, round2StatePtr, round2BlocksPtr);
+
+                // enable this in a bit, and feed it the results of the CPU miner, so we can check them against each other
+                //uint? nonce = new SseCpuSolver().Solve(this, work, round1StatePtr, round1BlocksPtr, round2StatePtr, round2BlocksPtr);
 
                 // solution found!
                 if (nonce != null)

@@ -101,14 +101,6 @@
     <AppDesigner Include="Properties\" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\BitMaker.Miner.Plugin.Cpu\BitMaker.Miner.Plugin.Cpu.csproj">
-      <Project>{1DCB57B9-30CB-4557-AAE5-94481CFA6B13}</Project>
-      <Name>BitMaker.Miner.Plugin.Cpu</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\BitMaker.Miner.Plugin\BitMaker.Miner.Plugin.csproj">
-      <Project>{B64FE513-79E8-4443-AF2C-0BB921A19F24}</Project>
-      <Name>BitMaker.Miner.Plugin</Name>
-    </ProjectReference>
     <ProjectReference Include="..\BitMaker.Miner\BitMaker.Miner.csproj">
       <Project>{9231C5BC-33FE-485D-87F6-A72F9A5C919D}</Project>
       <Name>BitMaker.Miner</Name>

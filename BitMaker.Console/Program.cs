@@ -8,11 +8,11 @@ namespace BitMaker.Console
     public static class Program
     {
 
-        private static Engine engine;
+        private static MinerHost engine;
 
         public static void Main(string[] args)
         {
-            engine = new Engine();
+            engine = new MinerHost();
             engine.Start();
 
             global::System.Console.WriteLine();

@@ -10,21 +10,19 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BitMaker.Miner", "BitMaker.Miner\BitMaker.Miner.csproj", "{9231C5BC-33FE-485D-87F6-A72F9A5C919D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BitMaker.Miner.Plugin", "BitMaker.Miner.Plugin\BitMaker.Miner.Plugin.csproj", "{B64FE513-79E8-4443-AF2C-0BB921A19F24}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BitMaker.Miner.Plugin.Cpu", "BitMaker.Miner.Plugin.Cpu\BitMaker.Miner.Plugin.Cpu.csproj", "{1DCB57B9-30CB-4557-AAE5-94481CFA6B13}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BitMaker", "BitMaker\BitMaker.csproj", "{CA1DBC6B-3F49-4545-9DFA-1FA0968C523C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BitMaker.Console", "BitMaker.Console\BitMaker.Console.csproj", "{0407A1B3-13AB-44DE-BBBE-5B453F610C7B}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BitMaker.Miner.Plugin.Cloo", "BitMaker.Miner.Plugin.Cloo\BitMaker.Miner.Plugin.Cloo.csproj", "{4276299E-7F12-438C-B963-2F7EAFC30C8F}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BitMaker.Utils", "BitMaker.Utils\BitMaker.Utils.csproj", "{24BBFAE2-CC57-4909-A34B-ED84068EA795}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BitMaker.Utils.Tests", "BitMaker.Utils.Tests\BitMaker.Utils.Tests.csproj", "{EE089490-919E-4EC1-BBE9-F4C3909945C0}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "BitMaker.Utils.Native", "BitMaker.Utils.Native\BitMaker.Utils.Native.vcxproj", "{90AA6371-FF81-4F7C-BC63-D993C7873FC2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BitMaker.Miner.Cloo", "BitMaker.Miner.Cloo\BitMaker.Miner.Cloo.csproj", "{4276299E-7F12-438C-B963-2F7EAFC30C8F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BitMaker.Miner.Cpu", "BitMaker.Miner.Cpu\BitMaker.Miner.Cpu.csproj", "{1DCB57B9-30CB-4557-AAE5-94481CFA6B13}"
 EndProject
 Global
 	GlobalSection(TestCaseManagementSettings) = postSolution
@@ -39,14 +37,6 @@ Global
 		{9231C5BC-33FE-485D-87F6-A72F9A5C919D}.Debug|x64.Build.0 = Debug|Any CPU
 		{9231C5BC-33FE-485D-87F6-A72F9A5C919D}.Release|x64.ActiveCfg = Release|Any CPU
 		{9231C5BC-33FE-485D-87F6-A72F9A5C919D}.Release|x64.Build.0 = Release|Any CPU
-		{B64FE513-79E8-4443-AF2C-0BB921A19F24}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{B64FE513-79E8-4443-AF2C-0BB921A19F24}.Debug|x64.Build.0 = Debug|Any CPU
-		{B64FE513-79E8-4443-AF2C-0BB921A19F24}.Release|x64.ActiveCfg = Release|Any CPU
-		{B64FE513-79E8-4443-AF2C-0BB921A19F24}.Release|x64.Build.0 = Release|Any CPU
-		{1DCB57B9-30CB-4557-AAE5-94481CFA6B13}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{1DCB57B9-30CB-4557-AAE5-94481CFA6B13}.Debug|x64.Build.0 = Debug|Any CPU
-		{1DCB57B9-30CB-4557-AAE5-94481CFA6B13}.Release|x64.ActiveCfg = Release|Any CPU
-		{1DCB57B9-30CB-4557-AAE5-94481CFA6B13}.Release|x64.Build.0 = Release|Any CPU
 		{CA1DBC6B-3F49-4545-9DFA-1FA0968C523C}.Debug|x64.ActiveCfg = Debug|x64
 		{CA1DBC6B-3F49-4545-9DFA-1FA0968C523C}.Debug|x64.Build.0 = Debug|x64
 		{CA1DBC6B-3F49-4545-9DFA-1FA0968C523C}.Release|x64.ActiveCfg = Release|x64
@@ -55,10 +45,6 @@ Global
 		{0407A1B3-13AB-44DE-BBBE-5B453F610C7B}.Debug|x64.Build.0 = Debug|x64
 		{0407A1B3-13AB-44DE-BBBE-5B453F610C7B}.Release|x64.ActiveCfg = Release|x64
 		{0407A1B3-13AB-44DE-BBBE-5B453F610C7B}.Release|x64.Build.0 = Release|x64
-		{4276299E-7F12-438C-B963-2F7EAFC30C8F}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{4276299E-7F12-438C-B963-2F7EAFC30C8F}.Debug|x64.Build.0 = Debug|Any CPU
-		{4276299E-7F12-438C-B963-2F7EAFC30C8F}.Release|x64.ActiveCfg = Release|Any CPU
-		{4276299E-7F12-438C-B963-2F7EAFC30C8F}.Release|x64.Build.0 = Release|Any CPU
 		{24BBFAE2-CC57-4909-A34B-ED84068EA795}.Debug|x64.ActiveCfg = Debug|Any CPU
 		{24BBFAE2-CC57-4909-A34B-ED84068EA795}.Debug|x64.Build.0 = Debug|Any CPU
 		{24BBFAE2-CC57-4909-A34B-ED84068EA795}.Release|x64.ActiveCfg = Release|Any CPU
@@ -71,6 +57,10 @@ Global
 		{90AA6371-FF81-4F7C-BC63-D993C7873FC2}.Debug|x64.Build.0 = Debug|x64
 		{90AA6371-FF81-4F7C-BC63-D993C7873FC2}.Release|x64.ActiveCfg = Release|x64
 		{90AA6371-FF81-4F7C-BC63-D993C7873FC2}.Release|x64.Build.0 = Release|x64
+		{4276299E-7F12-438C-B963-2F7EAFC30C8F}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{4276299E-7F12-438C-B963-2F7EAFC30C8F}.Release|x64.ActiveCfg = Release|Any CPU
+		{1DCB57B9-30CB-4557-AAE5-94481CFA6B13}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{1DCB57B9-30CB-4557-AAE5-94481CFA6B13}.Release|x64.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

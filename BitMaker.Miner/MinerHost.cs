@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.ComponentModel.Composition.Hosting;
+using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Threading;
@@ -9,7 +10,6 @@ using System.Threading;
 using Jayrock.Json;
 using Jayrock.Json.Conversion;
 
-using BitMaker.Miner.Plugin;
 using BitMaker.Utils;
 
 namespace BitMaker.Miner
@@ -18,7 +18,7 @@ namespace BitMaker.Miner
     /// <summary>
     /// Hosts plugins and makes work available.
     /// </summary>
-    public class Engine : IMinerContext
+    public class MinerHost : IMinerContext
     {
 
         private object syncRoot = new object();
@@ -27,11 +27,6 @@ namespace BitMaker.Miner
         /// Ensures we don't start or stop multiple times.
         /// </summary>
         private bool started = false;
-
-        /// <summary>
-        /// Number of milliseconds after which to expire work.
-        /// </summary>
-        private static int workAgeMax = (int)TimeSpan.FromMinutes(2).TotalMilliseconds;
 
         /// <summary>
         /// Gets the current block number
@@ -52,6 +47,11 @@ namespace BitMaker.Miner
         /// Milliseconds between recalculation of statistics.
         /// </summary>
         private static int statisticsPeriod = (int)TimeSpan.FromSeconds(3).TotalMilliseconds;
+
+        /// <summary>
+        /// Time the statistics were last calculated.
+        /// </summary>
+        private Stopwatch statisticsStopWatch;
 
         /// <summary>
         /// Timer that fires to collect statistics.
@@ -77,7 +77,7 @@ namespace BitMaker.Miner
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        public Engine()
+        public MinerHost()
         {
             // import available plugins
             new CompositionContainer(new DirectoryCatalog(".", "*.dll")).SatisfyImportsOnce(this);
@@ -98,6 +98,7 @@ namespace BitMaker.Miner
 
                 // recalculate statistics periodically
                 statisticsTimer = new Timer(CalculateStatistics, null, 0, statisticsPeriod);
+                statisticsStopWatch = new Stopwatch();
 
                 // periodically check latest block number
                 refreshTimer = new Timer(RefreshBlock, null, 0, refreshPeriod);
@@ -132,6 +133,7 @@ namespace BitMaker.Miner
 
                 statisticsTimer.Dispose();
                 statisticsTimer = null;
+                statisticsStopWatch = null;
 
                 refreshTimer.Dispose();
                 refreshTimer = null;
@@ -226,10 +228,17 @@ namespace BitMaker.Miner
         /// <param name="state"></param>
         private void CalculateStatistics(object state)
         {
-            int hc = Interlocked.Exchange(ref hashCount, 0);
+            lock (syncRoot)
+            {
+                // obtain current values, then restart watch
+                statisticsStopWatch.Stop();
+                var hc = Interlocked.Exchange(ref hashCount, 0);
+                var dif = statisticsStopWatch.ElapsedMilliseconds;
+                statisticsStopWatch.Restart();
 
-            // average the previous value with the new value
-            hashesPerSecond = (hashesPerSecond + (hc / (statisticsPeriod / 1000))) / 2;
+                if (dif > 1000)
+                    hashesPerSecond = (int)(hc / (dif / 1000));
+            }
         }
 
         /// <summary>
@@ -313,15 +322,9 @@ namespace BitMaker.Miner
                 if (result == null)
                     return null;
 
-                // create a timer which cancels the work after a period
-                var cts = new CancellationTokenSource();
-                var tmr = new Timer(i => cts.Cancel(), null, workAgeMax, Timeout.Infinite);
-                cts.Token.Register(() => tmr.Dispose());
-
                 // generate new work instance
                 var work = new Work()
                 {
-                    CancellationToken = cts.Token,
                     BlockNumber = blockNumber,
                     Header = Memory.Decode(result.Data),
                     Target = Memory.Decode(result.Target),

@@ -14,7 +14,7 @@ namespace BitMaker
 
         private static TimeSpan idleThreshold = ConfigurationSection.GetDefaultSection().IdleThreshold;
 
-        public Engine Engine { get; private set; }
+        public MinerHost Engine { get; private set; }
 
         /// <summary>
         /// Determines whether to start or stop the engine.
@@ -48,7 +48,7 @@ namespace BitMaker
             idle = !args.Args.Any(i => i == "/run");
 
             // miner engine
-            Engine = new Engine();
+            Engine = new MinerHost();
 
             // if not hidden, show monitor window
             if (showWindow)
