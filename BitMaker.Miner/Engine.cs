@@ -18,7 +18,7 @@ namespace BitMaker.Miner
     /// <summary>
     /// Hosts plugins and makes work available.
     /// </summary>
-    public class Engine : IPluginContext
+    public class Engine : IMinerContext
     {
 
         private object syncRoot = new object();
@@ -36,7 +36,7 @@ namespace BitMaker.Miner
         /// <summary>
         /// Gets the current block number
         /// </summary>
-        public int CurrentBlockNumber { get; private set; }
+        public uint CurrentBlockNumber { get; private set; }
 
         /// <summary>
         /// Milliseconds between recalculation of statistics.
@@ -62,7 +62,7 @@ namespace BitMaker.Miner
         /// Imported plugins.
         /// </summary>
         [ImportMany]
-        public IEnumerable<IPlugin> Plugins { get; set; }
+        public IEnumerable<IMiner> Plugins { get; set; }
 
         /// <summary>
         /// Initializes a new instance.
@@ -73,7 +73,7 @@ namespace BitMaker.Miner
             new CompositionContainer(new DirectoryCatalog(".", "*.dll")).SatisfyImportsOnce(this);
 
             // default value
-            CurrentBlockNumber = -1;
+            CurrentBlockNumber = 0;
         }
 
         /// <summary>
@@ -199,7 +199,7 @@ namespace BitMaker.Miner
         /// </summary>
         /// <param name="plugin"></param>
         /// <param name="count"></param>
-        public void ReportHashes(IPlugin plugin, int count)
+        public void ReportHashes(IMiner plugin, int count)
         {
             Interlocked.Add(ref hashCount, count);
         }
@@ -266,8 +266,9 @@ namespace BitMaker.Miner
             var httpResponse = req.GetResponse();
 
             // update current block number
+            uint blockNumber = 0;
             if (httpResponse.Headers["X-Blocknum"] != null)
-                CurrentBlockNumber = int.Parse(httpResponse.Headers["X-Blocknum"]);
+                blockNumber = CurrentBlockNumber = uint.Parse(httpResponse.Headers["X-Blocknum"]);
 
             // retrieve invocation response
             using (var txt = new StreamReader(httpResponse.GetResponseStream()))
@@ -296,6 +297,7 @@ namespace BitMaker.Miner
                 var work = new Work()
                 {
                     CancellationToken = cts.Token,
+                    BlockNumber = blockNumber,
                     Header = Memory.Decode(result.Data),
                     Target = Memory.Decode(result.Target),
                 };

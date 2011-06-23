@@ -151,20 +151,14 @@ namespace BitMaker.Utils
                 // starting position of trailing length, in long
                 var p = SHA256_BLOCK_SIZE - sizeof(ulong);
 
-                if (BitConverter.IsLittleEndian)
-                {
-                    // swap endianness of trailing length and insert as two integers
-                    uint sz1 = (uint)(((ulong)size * 8UL) << 32);
-                    uint sz2 = (uint)(((ulong)size * 8UL));
-                    ((uint*)block)[p / sizeof(uint) + 0] = Memory.ReverseEndian(sz1);
-                    ((uint*)block)[p / sizeof(uint) + 1] = Memory.ReverseEndian(sz2);
-                }
-                else
-                    ((ulong*)block)[p] = (ulong)size * 8UL;
+                // swap endianness of trailing length and insert as two integers
+                uint sz1 = (uint)(((ulong)size * 8UL) << 32);
+                uint sz2 = (uint)(((ulong)size * 8UL));
+                ((uint*)block)[p / sizeof(uint) + 0] = Memory.ReverseEndian(sz1);
+                ((uint*)block)[p / sizeof(uint) + 1] = Memory.ReverseEndian(sz2);
             }
 
-            if (BitConverter.IsLittleEndian)
-                Memory.ReverseEndian((uint*)block, SHA256_BLOCK_SIZE / sizeof(uint));
+            Memory.ReverseEndian((uint*)block, SHA256_BLOCK_SIZE / sizeof(uint));
         }
 
         /// <summary>

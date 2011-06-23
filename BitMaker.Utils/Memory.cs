@@ -90,6 +90,29 @@ namespace BitMaker.Utils
         /// Flips the endianess of every uint in a buffer.
         /// </summary>
         /// <param name="buffer"></param>
+        public static unsafe void ReverseEndian(uint[] buffer)
+        {
+            fixed (uint* bufferPtr = buffer)
+                ReverseEndian(bufferPtr, buffer.Length);
+        }
+
+        /// <summary>
+        /// Flips the endianess of every uint in a buffer.
+        /// </summary>
+        /// <param name="buffer"></param>
+        public static unsafe void ReverseEndian(uint[] buffer, uint[] output)
+        {
+            if (buffer.Length != output.Length)
+                throw new ArgumentException();
+
+            fixed (uint* bufferPtr = buffer, outputPtr = output)
+                ReverseEndian(bufferPtr, outputPtr, buffer.Length);
+        }
+
+        /// <summary>
+        /// Flips the endianess of every uint in a buffer.
+        /// </summary>
+        /// <param name="buffer"></param>
         /// <param name="size"></param>
         public static unsafe void ReverseEndian(uint* buffer, int size)
         {

@@ -5,17 +5,17 @@ namespace BitMaker.Miner.Plugin
 {
 
     /// <summary>
-    /// Marks a <see cref="IPlugin"/> as a plugin that should be loaded.
+    /// Marks a <see cref="IMiner"/> as a plugin that should be loaded.
     /// </summary>
     [AttributeUsage(AttributeTargets.Class)]
-    public sealed class PluginAttribute : ExportAttribute, IPluginMetadata
+    public sealed class MinerAttribute : ExportAttribute, IMinerMetadata
     {
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        public PluginAttribute()
-            : base(typeof(IPlugin))
+        public MinerAttribute()
+            : base(typeof(IMiner))
         {
 
         }
@@ -23,9 +23,9 @@ namespace BitMaker.Miner.Plugin
     }
 
     /// <summary>
-    /// Metadata exported by a plugin implementation.
+    /// Metadata exported by a miner implementation.
     /// </summary>
-    public interface IPluginMetadata
+    public interface IMinerMetadata
     {
 
 

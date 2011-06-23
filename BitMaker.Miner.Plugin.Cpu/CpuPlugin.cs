@@ -2,17 +2,19 @@
 using System.Threading;
 
 using BitMaker.Utils;
+using System.Security.Cryptography;
 
 namespace BitMaker.Miner.Plugin.Cpu
 {
 
-    [Plugin]
-    public class CpuPlugin : IPlugin
+    [Miner]
+    public class CpuPlugin : IMiner
     {
 
+        private readonly SHA256 sha256 = SHA256.Create();
         private readonly object syncRoot = new object();
         private bool started = false;
-        private IPluginContext ctx;
+        private IMinerContext ctx;
 
         /// <summary>
         /// Signals work threads to stop.
@@ -24,7 +26,7 @@ namespace BitMaker.Miner.Plugin.Cpu
         /// </summary>
         private Thread[] workThreads;
 
-        public void Start(IPluginContext ctx)
+        public void Start(IMinerContext ctx)
         {
             lock (syncRoot)
             {
@@ -35,8 +37,8 @@ namespace BitMaker.Miner.Plugin.Cpu
                 this.cts = new CancellationTokenSource();
 
                 // create work threads
+                workThreads = new Thread[1];
                 workThreads = new Thread[Environment.ProcessorCount + 1];
-                //workThreads = new Thread[1];
                 for (int i = 0; i < workThreads.Length; i++)
                 {
                     workThreads[i] = new Thread(WorkThread)
@@ -93,6 +95,31 @@ namespace BitMaker.Miner.Plugin.Cpu
         }
 
         /// <summary>
+        /// Returns true if the plugin should shutdown.
+        /// </summary>
+        internal bool IsCancellationRequested
+        {
+            get { return cts.IsCancellationRequested; }
+        }
+
+        /// <summary>
+        /// Reports a hash count to the miner.
+        /// </summary>
+        /// <param name="hashCount"></param>
+        internal void ReportHashes(int hashCount)
+        {
+            ctx.ReportHashes(this, hashCount);
+        }
+
+        /// <summary>
+        /// Gets the current block number.
+        /// </summary>
+        internal uint CurrentBlockNumber
+        {
+            get { return ctx.CurrentBlockNumber; }
+        }
+
+        /// <summary>
         /// Invoked for each retrieved work item.
         /// </summary>
         /// <param name="work"></param>
@@ -114,97 +141,60 @@ namespace BitMaker.Miner.Plugin.Cpu
                 return;
 
             // allocate buffers to hold hashing work
-            byte[] data = Sha256.AllocateInputBuffer(80);
-            uint[] midstate = Sha256.AllocateStateBuffer();
-            uint[] state = Sha256.AllocateStateBuffer();
-            uint[] state2 = Sha256.AllocateStateBuffer();
-            byte[] hash = new byte[Sha256.SHA256_BLOCK_SIZE];
+            byte[] round1Blocks = Sha256.AllocateInputBuffer(80);
+            uint[] round1State = Sha256.AllocateStateBuffer();
+            byte[] round2Blocks = Sha256.AllocateInputBuffer(Sha256.SHA256_HASH_SIZE);
+            uint[] round2State = Sha256.AllocateStateBuffer();
 
-            fixed (byte* workHeaderPtr = work.Header, workTargetPtr = work.Target)
-            fixed (byte* dataPtr = data, hashPtr = hash)
-            fixed (uint* midstatePtr = midstate, statePtr = state, state2Ptr = state2)
+            fixed (byte* round1BlocksPtr = round1Blocks, round2BlocksPtr = round2Blocks)
+            fixed (uint* round1StatePtr = round1State, round2StatePtr = round2State)
             {
-                if (BitConverter.IsLittleEndian)
-                    // header arrives in big endian, convert to host
-                    Memory.ReverseEndian((uint*)workHeaderPtr, (uint*)dataPtr, 20);
-                else
-                    // simply copy if conversion not required
-                    Memory.Copy(workHeaderPtr, dataPtr, 80);
+                // header arrives in big endian, convert to host
+                fixed (byte* workHeaderPtr = work.Header)
+                    Memory.ReverseEndian((uint*)workHeaderPtr, (uint*)round1BlocksPtr, 20);
 
                 // append '1' bit and trailing length
-                Sha256.Prepare(dataPtr, 80, 0);
-                Sha256.Prepare(dataPtr + Sha256.SHA256_BLOCK_SIZE, 80, 1);
+                Sha256.Prepare(round1BlocksPtr, 80, 0);
+                Sha256.Prepare(round1BlocksPtr + Sha256.SHA256_BLOCK_SIZE, 80, 1);
 
                 // hash first half of header
-                Sha256.Initialize(midstatePtr);
-                Sha256.Transform(midstatePtr, dataPtr);
+                Sha256.Initialize(round1StatePtr);
+                Sha256.Transform(round1StatePtr, round1BlocksPtr);
 
-                // prepare the block of the hash buffer for the second round, this data shouldn't be overwritten
-                Sha256.Prepare(hashPtr, Sha256.SHA256_HASH_SIZE, 0);
+                // initialize values for round 2
+                Sha256.Initialize(round2StatePtr);
+                Sha256.Prepare(round2BlocksPtr, Sha256.SHA256_HASH_SIZE, 0);
 
-                // read initial nonce value
-                uint nonce = Memory.ReverseEndian(((uint*)dataPtr)[19]);
+                // solve the header
+                uint? nonce = new ManagedHasher().Solve(this, work, round1StatePtr, round1BlocksPtr, round2StatePtr, round2BlocksPtr);
 
-                // initial state
-                Sha256.Initialize(statePtr);
-
-                // test every possible nonce value
-                while (nonce <= uint.MaxValue)
+                // solution found!
+                if (nonce != null)
                 {
-                    // transform variable second half of block using saved state
-                    Sha256.Transform(midstatePtr, dataPtr + Sha256.SHA256_BLOCK_SIZE, (uint*)hashPtr);
+                    // ensure nonce is set on header
+                    ((uint*)round1BlocksPtr)[19] = Memory.ReverseEndian((uint)nonce);
 
-                    // compute second hash back into hash
-                    Sha256.Transform(statePtr, hashPtr, state2Ptr);
+                    // replace header data on work
+                    work.Header = new byte[80];
+                    fixed (byte* dstHeaderPtr = work.Header)
+                        Memory.Copy((uint*)round1BlocksPtr, (uint*)dstHeaderPtr, 20);
 
-                    // only report and check for exit conditions every so often
-                    if (nonce % 1024 == 0 && nonce > 0)
-                    {
-                        ctx.ReportHashes(this, 1024);
-                        if (work.CancellationToken.IsCancellationRequested || cts.IsCancellationRequested)
-                            break;
+                    // compute full hash of header using native implementation
+                    var hash = Memory.Encode(sha256.ComputeHash(sha256.ComputeHash(work.Header)));
 
-                        // current block number has changed, our work is invalid
-                        if (currentBlockNumber != ctx.CurrentBlockNumber)
-                            break;
-                    }
+                    // display message indicating submission
+                    Console.WriteLine();
+                    Console.WriteLine();
+                    Console.WriteLine("SOLUTION: {0}", hash);
 
-                    // the hash is byte order flipped state, quick check that state passes a test before doing work
-                    if (state2Ptr[7] == 0U)
-                    {
-                        // replace header data on work
-                        work.Header = new byte[80];
-                        fixed (byte* dstHeaderPtr = work.Header)
-                            Memory.Copy((uint*)dataPtr, (uint*)dstHeaderPtr, 20);
+                    // submit work for completion
+                    if (ctx.SubmitWork(work))
+                        Console.WriteLine("ACCEPTED: {0}", hash);
+                    else
+                        Console.WriteLine("REJECTED: {0}", hash);
 
-                        // finalize hash
-                        byte[] finalHash = Sha256.AllocateHashBuffer();
-                        fixed (byte* finalHashPtr = finalHash)
-                            Sha256.Finalize(state2Ptr, finalHashPtr);
-
-                        // bitcoin hashes are byte order flipped SHA-256 hashes
-                        Array.Reverse(finalHash);
-
-                        // encode for display purposes
-                        var blockHash = Memory.Encode(finalHash);
-
-                        // display message indicating submission
-                        Console.WriteLine();
-                        Console.WriteLine();
-                        Console.WriteLine("SOLUTION: {0}", blockHash);
-
-                        // submit work for completion
-                        if (ctx.SubmitWork(work))
-                            Console.WriteLine("ACCEPTED: {0}", blockHash);
-                        else
-                            Console.WriteLine("REJECTED: {0}", blockHash);
-
-                        Console.WriteLine();
-                        Console.WriteLine();
-                    }
-
-                    // update the nonce value
-                    ((uint*)dataPtr)[19] = Memory.ReverseEndian(++nonce);
+                    Console.WriteLine();
+                    Console.WriteLine();
                 }
             }
         }

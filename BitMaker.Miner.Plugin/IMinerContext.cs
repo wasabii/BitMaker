@@ -4,7 +4,7 @@
     /// <summary>
     /// Context information available to plugins.
     /// </summary>
-    public interface IPluginContext
+    public interface IMinerContext
     {
 
         /// <summary>
@@ -26,12 +26,12 @@
         /// </summary>
         /// <param name="plugin"><see cref="T:IPlugin"/> that was responsible for generation of the hashes</param>
         /// <param name="count">number of hashes to report</param>
-        void ReportHashes(IPlugin plugin, int count);
+        void ReportHashes(IMiner plugin, int count);
 
         /// <summary>
         /// Gets the current block number. When this is changed any outstanding work is invalid.
         /// </summary>
-        int CurrentBlockNumber { get; }
+        uint CurrentBlockNumber { get; }
 
     }
 

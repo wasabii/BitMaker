@@ -157,117 +157,117 @@ namespace BitMaker.Utils.Tests
             }
         }
 
-        //[TestMethod]
-        //public unsafe void BlockHeaderHashTest()
-        //{
-        //    var a = Memory.ReverseEndian(1308625456);
-        //    var b = Memory.Encode(new uint[] { 2377719358 });
+        [TestMethod]
+        public unsafe void BlockHeaderHashTest()
+        {
+            var a = Memory.ReverseEndian(1308625456);
+            var b = Memory.Encode(new uint[] { 2377719358 });
 
-        //    byte[] workHeader = Memory.Decode("0000000195722e37c42b188b79487a29d08cfb7fa7962a8935ead9e60000038300000000b0a5360d1d8a902cf9c047cf395e181aa498ce84f15be5d6c4e5b1f0c94a33474e000a301a13218500000000000000800000000000000000000000000000000000000000000000000000000000000000000000000000000080020000");
-        //    byte[] workTarget = Memory.Decode("ffffffffffffffffffffffffffffffffffffffffffffffffffffffff00000000");
-        //    byte[] workNewHeader;
+            byte[] workHeader = Memory.Decode("00000001d915b8fd2face61c6fe22ab76cad5f46c11cebab697dbd9e00000804000000008fe5f19cbdd55b40db93be7ef8ae249e0b21ec6e29c833b186404de0de205cc54e0022ac1a132185007d1adf000000800000000000000000000000000000000000000000000000000000000000000000000000000000000080020000");
+            byte[] workTarget = Memory.Decode("ffffffffffffffffffffffffffffffffffffffffffffffffffffffff00000000");
+            byte[] workNewHeader;
 
-        //    /* This procedure is optimized based on the internals of the SHA-256 algorithm. As each block is transformed,
-        //     * the state variable is updated. Finalizing the hash consists of reversing the byte order of the state.
-        //     * Data to be hashed needs to have it's byte order reversed. Instead of reversing the first state to obtain
-        //     * the first hash and then reversing it again, we output the transform of the header directly into a block
-        //     * pre-padded to the size of a hash, and then transform that again using new state. This prevents the double
-        //     * byte order swap.
-        //     **/
+            /* This procedure is optimized based on the internals of the SHA-256 algorithm. As each block is transformed,
+             * the state variable is updated. Finalizing the hash consists of reversing the byte order of the state.
+             * Data to be hashed needs to have it's byte order reversed. Instead of reversing the first state to obtain
+             * the first hash and then reversing it again, we output the transform of the header directly into a block
+             * pre-padded to the size of a hash, and then transform that again using new state. This prevents the double
+             * byte order swap.
+             **/
 
 
-        //    // allocate buffers to hold hashing work
-        //    byte[] data = Sha256.AllocateInputBuffer(80);
-        //    uint[] midstate = Sha256.AllocateStateBuffer();
-        //    uint[] state = Sha256.AllocateStateBuffer();
-        //    uint[] state2 = Sha256.AllocateStateBuffer();
-        //    byte[] hash = new byte[Sha256.SHA256_BLOCK_SIZE];
+            // allocate buffers to hold hashing work
+            byte[] data = Sha256.AllocateInputBuffer(80);
+            uint[] midstate = Sha256.AllocateStateBuffer();
+            uint[] state = Sha256.AllocateStateBuffer();
+            uint[] state2 = Sha256.AllocateStateBuffer();
+            byte[] hash = new byte[Sha256.SHA256_BLOCK_SIZE];
 
-        //    fixed (byte* workHeaderPtr = workHeader, workTargetPtr = workTarget)
-        //    fixed (byte* dataPtr = data, hashPtr = hash)
-        //    fixed (uint* midstatePtr = midstate, statePtr = state, state2Ptr = state2)
-        //    {
-        //        if (BitConverter.IsLittleEndian)
-        //            // header arrives in big endian, convert to host
-        //            Memory.ReverseEndian((uint*)workHeaderPtr, (uint*)dataPtr, 20);
-        //        else
-        //            // simply copy if conversion not required
-        //            Memory.Copy((uint*)workHeaderPtr, (uint*)dataPtr, 20);
+            fixed (byte* workHeaderPtr = workHeader, workTargetPtr = workTarget)
+            fixed (byte* dataPtr = data, hashPtr = hash)
+            fixed (uint* midstatePtr = midstate, statePtr = state, state2Ptr = state2)
+            {
+                if (BitConverter.IsLittleEndian)
+                    // header arrives in big endian, convert to host
+                    Memory.ReverseEndian((uint*)workHeaderPtr, (uint*)dataPtr, 20);
+                else
+                    // simply copy if conversion not required
+                    Memory.Copy((uint*)workHeaderPtr, (uint*)dataPtr, 20);
 
-        //        // append '1' bit and trailing length
-        //        Sha256.Prepare(dataPtr, 80, 0);
-        //        Sha256.Prepare(dataPtr + Sha256.SHA256_BLOCK_SIZE, 80, 1);
+                // append '1' bit and trailing length
+                Sha256.Prepare(dataPtr, 80, 0);
+                Sha256.Prepare(dataPtr + Sha256.SHA256_BLOCK_SIZE, 80, 1);
 
-        //        // hash first half of header
-        //        Sha256.Initialize(midstatePtr);
-        //        Sha256.Transform(midstatePtr, dataPtr);
+                // hash first half of header
+                Sha256.Initialize(midstatePtr);
+                Sha256.Transform(midstatePtr, dataPtr);
 
-        //        // prepare the block of the hash buffer for the second round, this data shouldn't be overwritten
-        //        Sha256.Prepare(hashPtr, Sha256.SHA256_HASH_SIZE, 0);
+                // prepare the block of the hash buffer for the second round, this data shouldn't be overwritten
+                Sha256.Prepare(hashPtr, Sha256.SHA256_HASH_SIZE, 0);
 
-        //        // read initial nonce value
-        //        uint nonce = Memory.ReverseEndian(((uint*)dataPtr)[19]);
+                // read initial nonce value
+                uint nonce = Memory.ReverseEndian(((uint*)dataPtr)[19]);
 
-        //        // initial state
-        //        Sha256.Initialize(statePtr);
+                // initial state
+                Sha256.Initialize(statePtr);
 
-        //        // test every possible nonce value
-        //        while (nonce <= uint.MaxValue)
-        //        {
-        //            ((uint*)dataPtr)[19] = Memory.ReverseEndian(2377719358);
+                // test every possible nonce value
+                while (nonce <= 65535)
+                {
+                    ((uint*)dataPtr)[19] = Memory.ReverseEndian(2377719358);
 
-        //            // transform variable second half of block using saved state
-        //            Sha256.Transform(midstatePtr, dataPtr + Sha256.SHA256_BLOCK_SIZE, (uint*)hashPtr);
+                    // transform variable second half of block using saved state
+                    Sha256.Transform(midstatePtr, dataPtr + Sha256.SHA256_BLOCK_SIZE, (uint*)hashPtr);
 
-        //            // compute second hash back into hash
-        //            Sha256.Transform(statePtr, hashPtr, state2Ptr);
-                    
-        //            // the hash is byte order flipped state, quick check that state passes a test before doing work
-        //            if (state2Ptr[7] == 0U)
-        //            {
-        //                // replace header data on work
-        //                workNewHeader = new byte[80];
-        //                fixed (byte* dstHeaderPtr = workNewHeader)
-        //                    Memory.Copy((uint*)dataPtr, (uint*)dstHeaderPtr, 20);
+                    // compute second hash back into hash
+                    Sha256.Transform(statePtr, hashPtr, state2Ptr);
 
-        //                // finalize hash
-        //                byte[] finalHash = Sha256.AllocateHashBuffer();
-        //                fixed (byte* finalHashPtr = finalHash)
-        //                    Sha256.Finalize(state2Ptr, finalHashPtr);
+                    // the hash is byte order flipped state, quick check that state passes a test before doing work
+                    if (state2Ptr[7] == 0U)
+                    {
+                        // replace header data on work
+                        workNewHeader = new byte[80];
+                        fixed (byte* dstHeaderPtr = workNewHeader)
+                            Memory.Copy((uint*)dataPtr, (uint*)dstHeaderPtr, 20);
 
-        //                // bitcoin hashes are byte order flipped SHA-256 hashes
-        //                Array.Reverse(finalHash);
+                        // finalize hash
+                        byte[] finalHash = Sha256.AllocateHashBuffer();
+                        fixed (byte* finalHashPtr = finalHash)
+                            Sha256.Finalize(state2Ptr, finalHashPtr);
 
-        //                // encode for display purposes
-        //                var blockHash = Memory.Encode(finalHash);
+                        // bitcoin hashes are byte order flipped SHA-256 hashes
+                        Array.Reverse(finalHash);
 
-        //                // display message indicating submission
-        //                Console.WriteLine();
-        //                Console.WriteLine();
-        //                Console.WriteLine("Solution: {0}", blockHash);
+                        // encode for display purposes
+                        var blockHash = Memory.Encode(finalHash);
 
-        //                Console.WriteLine();
-        //                Console.WriteLine();
+                        // display message indicating submission
+                        Console.WriteLine();
+                        Console.WriteLine();
+                        Console.WriteLine("Solution: {0}", blockHash);
 
-        //                // header needs to have SHA-256 padding appended
-        //                var data2 = Sha256.AllocateInputBuffer(80);
+                        Console.WriteLine();
+                        Console.WriteLine();
 
-        //                // prepare header buffer with SHA-256
-        //                Sha256.Prepare(data2, 80, 0);
-        //                Sha256.Prepare(data2, 80, 1);
+                        // header needs to have SHA-256 padding appended
+                        var data2 = Sha256.AllocateInputBuffer(80);
 
-        //                // dump header data on top of padding
-        //                Array.Copy(workNewHeader, data2, 80);
+                        // prepare header buffer with SHA-256
+                        Sha256.Prepare(data2, 80, 0);
+                        Sha256.Prepare(data2, 80, 1);
 
-        //                // encode in proper format
-        //                var param = Memory.Encode(data2);
-        //            }
+                        // dump header data on top of padding
+                        Array.Copy(workNewHeader, data2, 80);
 
-        //            // update the nonce value
-        //            ((uint*)dataPtr)[19] = Memory.ReverseEndian(++nonce);
-        //        }
-        //    }
-        //}
+                        // encode in proper format
+                        var param = Memory.Encode(data2);
+                    }
+
+                    // update the nonce value
+                    ((uint*)dataPtr)[19] = Memory.ReverseEndian(++nonce);
+                }
+            }
+        }
 
     }
 

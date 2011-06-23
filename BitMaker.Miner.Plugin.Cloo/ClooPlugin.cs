@@ -8,8 +8,8 @@ using Cloo.Bindings;
 namespace BitMaker.Miner.Plugin.Cloo
 {
 
-    [Plugin]
-    public class ClooPlugin : IPlugin
+    [Miner]
+    public class ClooPlugin : IMiner
     {
 
         string clProgramSource = @"
@@ -253,7 +253,7 @@ kernel void test(
         ComputeDevice device;
         ComputeProgram program;
 
-        public void Start(IPluginContext context)
+        public void Start(IMinerContext context)
         {
             return;
 

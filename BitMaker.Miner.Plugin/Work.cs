@@ -16,9 +16,9 @@ namespace BitMaker.Miner.Plugin
         public CancellationToken CancellationToken { get; set; }
 
         /// <summary>
-        /// Gets or sets the header data.
+        /// Current block number when this work was delivered.
         /// </summary>
-        public BlockHeader Header2 { get; set; }
+        public uint BlockNumber { get; set; }
 
         /// <summary>
         /// Gets or sets the header data.

@@ -40,7 +40,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CpuPlugin.cs" />
+    <Compile Include="ManagedHasher.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Hasher.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\BitMaker.Miner.Plugin\BitMaker.Miner.Plugin.csproj">
