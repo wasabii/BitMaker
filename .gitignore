@@ -22,3 +22,7 @@
 /BitMaker.Utils.Native/x64
 /BitMaker.opensdf
 /BitMaker.sdf
+/BitMaker.Miner.Cloo/bin
+/BitMaker.Miner.Cloo/obj
+/BitMaker.Miner.Cpu/bin
+/BitMaker.Miner.Cpu/obj
