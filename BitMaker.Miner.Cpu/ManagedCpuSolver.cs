@@ -3,15 +3,18 @@
 namespace BitMaker.Miner.Cpu
 {
 
+    [CpuSolver]
     public class ManagedCpuSolver : CpuSolver
     {
 
-        public override unsafe uint? Solve(CpuMiner cpu, Work work, uint* round1State, byte* round1Block2, uint* round2State, byte* round2Block1)
+        public override unsafe uint? Solve(Work work, ICpuSolverStatus status, uint* round1State, byte* round1Block2, uint* round2State, byte* round2Block1)
         {
-            uint nonce = 0;
+            // start at existing nonce
+            uint nonce = Memory.ReverseEndian(((uint*)round1Block2)[3]);
 
             uint* round2State2 = stackalloc uint[Sha256.SHA256_STATE_SIZE];
 
+            uint count = 0;
             for (; ; )
             {
                 // transform variable second half of block using saved state from first block, into pre-padded round 2 block (end of first hash)
@@ -32,14 +35,9 @@ namespace BitMaker.Miner.Cpu
                     break;
 
                 // only report and check for exit conditions every so often
-                if (nonce % 8192 == 0 && nonce > 0)
-                {
-                    cpu.ReportHashes(8192);
-
-                    // current block number has changed, our work is invalid
-                    if (work.BlockNumber < cpu.CurrentBlockNumber || cpu.IsCancellationRequested)
+                if ((++count % 65536) == 0)
+                    if (!status.Check(65536))
                         break;
-                }
             }
 
             return null;

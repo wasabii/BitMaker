@@ -39,6 +39,8 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CpuSolverAttribute.cs" />
+    <Compile Include="ICpuSolverStatus.cs" />
     <Compile Include="SseCpuSolver.cs" />
     <Compile Include="CpuMiner.cs" />
     <Compile Include="ManagedCpuSolver.cs" />

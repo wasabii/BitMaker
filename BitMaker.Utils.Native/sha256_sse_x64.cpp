@@ -1,4 +1,5 @@
 #include "Stdafx.h"
+
 #include "sha256_sse_x64.h"
 
 #pragma managed(push, off)
@@ -102,7 +103,7 @@ static const uint32_t sha256_consts[] =
 //}
 
 
-static inline void __sha256_transform(__m128i *state, __m128i *block, __m128i *output)
+static inline void sha256_transform(__m128i *state, __m128i *block, __m128i *dst)
 {
     __m128i W[64], t1, t2;
     
@@ -318,14 +319,14 @@ static inline void __sha256_transform(__m128i *state, __m128i *block, __m128i *o
     t1 = add5(a, Sigma1(f), Ch(f, g, h), _mm_set1_epi32(0xc67178f2), W[63]);
     t2 = add2(Sigma0(b), Maj(b, c, d)); e = add2(e, t1); a = add2(t1, t2);
     
-    output[0] = a;
-    output[1] = b;
-    output[2] = c;
-    output[3] = d;
-    output[4] = e;
-    output[5] = f;
-    output[6] = g;
-    output[7] = h;
+    dst[0] = add2(state[0], a);
+    dst[1] = add2(state[1], b);
+    dst[2] = add2(state[2], c);
+    dst[3] = add2(state[3], d);
+    dst[4] = add2(state[4], e);
+    dst[5] = add2(state[5], f);
+    dst[6] = add2(state[6], g);
+    dst[7] = add2(state[7], h);
 }
 
 #pragma managed(push, on)

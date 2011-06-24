@@ -105,11 +105,6 @@ namespace BitMaker.Miner
                 hashesPerSecond = 0;
                 statisticsHashCount = 0;
                 hashCount = 0;
-                statisticsTimer = new Timer(CalculateStatistics, null, 0, statisticsPeriod);
-                statisticsStopWatch = new Stopwatch();
-
-                // periodically check latest block number
-                refreshTimer = new Timer(RefreshBlock, null, 0, refreshPeriod);
 
                 // start each plugin
                 foreach (var i in Plugins)
@@ -117,6 +112,13 @@ namespace BitMaker.Miner
                     Console.WriteLine("Starting: {0}", i.GetType().Name);
                     i.Start(this);
                 }
+
+                // begin timer to compile statistics
+                statisticsTimer = new Timer(CalculateStatistics, null, 0, statisticsPeriod);
+                statisticsStopWatch = new Stopwatch();
+
+                // periodically check latest block number
+                refreshTimer = new Timer(RefreshBlock, null, 0, refreshPeriod);
 
                 started = true;
             }
@@ -171,29 +173,9 @@ namespace BitMaker.Miner
         /// Gets a new unit of work.
         /// </summary>
         /// <returns></returns>
-        public Work GetWork()
+        public Work GetWork(IMiner miner, string comment)
         {
-            return Retry(GetWorkImpl, TimeSpan.FromSeconds(5));
-        }
-
-        /// <summary>
-        /// Invokes the given function repeatidly, until it succeeds, with a delay.
-        /// </summary>
-        /// <typeparam name="R"></typeparam>
-        /// <param name="func"></param>
-        /// <param name="delay"></param>
-        /// <returns></returns>
-        private R Retry<R>(Func<R> func, TimeSpan delay)
-        {
-            while (true)
-                try
-                {
-                    return func();
-                }
-                catch (Exception)
-                {
-                    Thread.Sleep(delay);
-                }
+            return Retry(GetWorkImpl, miner, comment, TimeSpan.FromSeconds(5));
         }
 
         /// <summary>
@@ -203,12 +185,31 @@ namespace BitMaker.Miner
         /// <param name="func"></param>
         /// <param name="delay"></param>
         /// <returns></returns>
-        private R Retry<T, R>(Func<T, R> func, T arg0, TimeSpan delay)
+        private R Retry<T1, T2, R>(Func<T1, T2, R> func, T1 arg0, T2 arg1, TimeSpan delay)
         {
             while (true)
                 try
                 {
-                    return func(arg0);
+                    return func(arg0, arg1);
+                }
+                catch (Exception)
+                {
+                    Thread.Sleep(delay);
+                }
+        }
+        /// <summary>
+        /// Invokes the given function repeatidly, until it succeeds, with a delay.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="func"></param>
+        /// <param name="delay"></param>
+        /// <returns></returns>
+        private R Retry<T1, T2, T3, R>(Func<T1, T2, T3, R> func, T1 arg0, T2 arg1, T3 arg2, TimeSpan delay)
+        {
+            while (true)
+                try
+                {
+                    return func(arg0, arg1, arg2);
                 }
                 catch (Exception)
                 {
@@ -221,9 +222,9 @@ namespace BitMaker.Miner
         /// </summary>
         /// <param name="work"></param>
         /// <returns></returns>
-        public bool SubmitWork(Work work)
+        public bool SubmitWork(IMiner miner, Work work, string comment)
         {
-            return Retry(SubmitWorkImpl, work, TimeSpan.FromSeconds(5));
+            return Retry(SubmitWorkImpl, miner, work, comment, TimeSpan.FromSeconds(5));
         }
 
         /// <summary>
@@ -231,9 +232,9 @@ namespace BitMaker.Miner
         /// </summary>
         /// <param name="plugin"></param>
         /// <param name="count"></param>
-        public void ReportHashes(IMiner plugin, int count)
+        public void ReportHashes(IMiner plugin, uint count)
         {
-            Interlocked.Add(ref statisticsHashCount, count);
+            Interlocked.Add(ref statisticsHashCount, (int)count);
         }
 
         /// <summary>
@@ -267,7 +268,14 @@ namespace BitMaker.Miner
         /// <param name="state"></param>
         private void RefreshBlock(object state)
         {
-            GetWork();
+            try
+            {
+                GetWorkImpl(null, null);
+            }
+            catch (WebException)
+            {
+                // ignore
+            }
         }
 
         #region JSON-RPC
@@ -276,7 +284,7 @@ namespace BitMaker.Miner
         /// Generates a <see cref="T:HttpWebRequest"/> for communicating with the node's JSON-API.
         /// </summary>
         /// <returns></returns>
-        private static HttpWebRequest RpcOpen()
+        private static HttpWebRequest RpcOpen(IMiner miner, string comment)
         {
             // configuration info, containing user name and password
             var url = ConfigurationSection.GetDefaultSection().Url;
@@ -289,7 +297,14 @@ namespace BitMaker.Miner
             req.Method = "POST";
             req.Pipelined = true;
             req.UserAgent = "BitMaker";
-            req.Headers["X-MachineName"] = Environment.MachineName;
+            req.Headers["X-BitMaker-MachineName"] = Environment.MachineName;
+
+            if (miner != null)
+                req.Headers["X-BitMaker-Miner"] = miner.GetType().Name;
+
+            if (!string.IsNullOrWhiteSpace(comment))
+                req.Headers["X-BitMaker-Comment"] = comment;
+
             return req;
         }
 
@@ -297,9 +312,9 @@ namespace BitMaker.Miner
         /// Invokes the 'getwork' JSON method and parses the result into a new <see cref="T:Work"/> instance.
         /// </summary>
         /// <returns></returns>
-        private unsafe Work GetWorkImpl()
+        private unsafe Work GetWorkImpl(IMiner miner, string comment)
         {
-            var req = RpcOpen();
+            var req = RpcOpen(miner, comment);
 
             // submit method invocation
             using (var txt = new StreamWriter(req.GetRequestStream()))
@@ -322,7 +337,18 @@ namespace BitMaker.Miner
             // update current block number
             uint blockNumber = 0;
             if (httpResponse.Headers["X-Blocknum"] != null)
-                blockNumber = CurrentBlockNumber = uint.Parse(httpResponse.Headers["X-Blocknum"]);
+            {
+                blockNumber = uint.Parse(httpResponse.Headers["X-Blocknum"]);
+                if (blockNumber != CurrentBlockNumber)
+                {
+                    Console.WriteLine();
+                    Console.WriteLine("Block: {0}", blockNumber);
+                    Console.WriteLine();
+                    Console.WriteLine();
+                }
+
+                CurrentBlockNumber = blockNumber;
+            }
 
             // retrieve invocation response
             using (var txt = new StreamReader(httpResponse.GetResponseStream()))
@@ -366,9 +392,9 @@ namespace BitMaker.Miner
         /// </summary>
         /// <param name="work"></param>
         /// <returns></returns>
-        private static unsafe bool SubmitWorkImpl(Work work)
+        private static unsafe bool SubmitWorkImpl(IMiner miner, Work work, string comment)
         {
-            var req = RpcOpen();
+            var req = RpcOpen(miner, comment);
 
             // header needs to have SHA-256 padding appended
             var data = Sha256.AllocateInputBuffer(80);
@@ -382,6 +408,11 @@ namespace BitMaker.Miner
 
             // encode in proper format
             var solution = Memory.Encode(data);
+
+            Console.WriteLine();
+            Console.WriteLine("SOLUTION: {0,10} {1}", miner.GetType().Name, Memory.Encode(work.Header));
+            Console.WriteLine();
+            Console.WriteLine();
 
             using (var txt = new StreamWriter(req.GetRequestStream()))
             using (var wrt = new JsonTextWriter(txt))
@@ -411,6 +442,11 @@ namespace BitMaker.Miner
 
                 if (response.Error != null)
                     Console.WriteLine("JSON-RPC: {0}", response.Error);
+
+                Console.WriteLine();
+                Console.WriteLine("{0}: {1,10} {2}", response.Result ? "ACCEPTED" : "REJECTED", miner.GetType().Name, Memory.Encode(work.Header));
+                Console.WriteLine();
+                Console.WriteLine();
 
                 return response.Result;
             }

@@ -35,16 +35,11 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Microsoft.CSharp" />
     <Reference Include="Microsoft.VisualStudio.QualityTools.UnitTestFramework, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
     <Reference Include="System" />
     <Reference Include="System.Core">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
-    <Reference Include="System.Data" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="System.Xml" />
-    <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <ItemGroup>
     <CodeAnalysisDependentAssemblyPaths Condition=" '$(VS100COMNTOOLS)' != '' " Include="$(VS100COMNTOOLS)..\IDE\PrivateAssemblies">
@@ -57,6 +52,14 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\BitMaker.Miner.Cpu\BitMaker.Miner.Cpu.csproj">
+      <Project>{1DCB57B9-30CB-4557-AAE5-94481CFA6B13}</Project>
+      <Name>BitMaker.Miner.Cpu</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\BitMaker.Miner\BitMaker.Miner.csproj">
+      <Project>{9231C5BC-33FE-485D-87F6-A72F9A5C919D}</Project>
+      <Name>BitMaker.Miner</Name>
+    </ProjectReference>
     <ProjectReference Include="..\BitMaker.Utils.Native\BitMaker.Utils.Native.vcxproj">
       <Project>{90AA6371-FF81-4F7C-BC63-D993C7873FC2}</Project>
       <Name>BitMaker.Utils.Native</Name>
@@ -68,6 +71,9 @@
   </ItemGroup>
   <ItemGroup>
     <Shadow Include="Test References\BitMaker.Utils.accessor" />
+  </ItemGroup>
+  <ItemGroup>
+    <Shadow Include="Test References\BitMaker.Miner.Cpu.accessor" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

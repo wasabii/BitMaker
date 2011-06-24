@@ -169,12 +169,13 @@ namespace BitMaker.Utils
         {
             uint a, b, c, d, e, f, g, h, t1, t2;
             uint* W = stackalloc uint[64];
+            //uint[] W = new uint[64];
 
-            // copy 16 ints out of block
+            //// copy 16 ints out of block
             //for (int i = 0; i < 16; i++)
             //    W[i] = ((uint*)block)[i];
 
-            // unrolled for 64-bit version
+            //// unrolled for 64-bit version
             ((IntPtr*)W)[0] = ((IntPtr*)block)[0];
             ((IntPtr*)W)[1] = ((IntPtr*)block)[1];
             ((IntPtr*)W)[2] = ((IntPtr*)block)[2];

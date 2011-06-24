@@ -7,7 +7,7 @@
     public abstract class CpuSolver
     {
 
-        public abstract unsafe uint? Solve(CpuMiner cpu, Work work, uint* round1State, byte* round1Block2, uint* round2State, byte* round2Block1);
+        public abstract unsafe uint? Solve(Work work, ICpuSolverStatus status, uint* round1State, byte* round1Block2, uint* round2State, byte* round2Block1);
 
     }
 
