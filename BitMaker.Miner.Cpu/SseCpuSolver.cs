@@ -11,8 +11,6 @@ namespace BitMaker.Miner.Cpu
             // checked periodically to report progress and determine if the hasher should continue
             BitMaker.Utils.Native.CheckDelegate check = hashCount =>
             {
-                Console.WriteLine("check");
-
                 cpu.ReportHashes(hashCount);
 
                 // check whether the program is terminating, or whether our work is expired

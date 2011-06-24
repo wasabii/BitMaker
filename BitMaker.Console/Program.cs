@@ -25,6 +25,9 @@ namespace BitMaker.Console
             global::System.Console.ReadLine();
             timer.Dispose();
             engine.Stop();
+
+            global::System.Console.WriteLine("Total Hashes: {0}", engine.HashCount);
+            global::System.Console.ReadLine();
         }
 
         private static void TimerCallback(object state)

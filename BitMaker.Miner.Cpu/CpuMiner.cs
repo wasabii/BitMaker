@@ -164,10 +164,10 @@ namespace BitMaker.Miner.Cpu
                 Sha256.Prepare(round2BlocksPtr, Sha256.SHA256_HASH_SIZE, 0);
 
                 // solve the header
-                uint? nonce = new ManagedCpuSolver().Solve(this, work, round1StatePtr, round1BlocksPtr, round2StatePtr, round2BlocksPtr);
+                //uint? nonce = new ManagedCpuSolver().Solve(this, work, round1StatePtr, round1BlocksPtr + Sha256.SHA256_BLOCK_SIZE, round2StatePtr, round2BlocksPtr);
 
                 // enable this in a bit, and feed it the results of the CPU miner, so we can check them against each other
-                //uint? nonce = new SseCpuSolver().Solve(this, work, round1StatePtr, round1BlocksPtr, round2StatePtr, round2BlocksPtr);
+                uint? nonce = new SseCpuSolver().Solve(this, work, round1StatePtr, round1BlocksPtr + Sha256.SHA256_BLOCK_SIZE, round2StatePtr, round2BlocksPtr);
 
                 // solution found!
                 if (nonce != null)

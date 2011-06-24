@@ -10,93 +10,97 @@ using namespace System::Runtime::InteropServices;
 
 typedef bool (*checkFunc)(int);
 
-bool __Solve(unsigned int *round1State, byte *round1Block1, unsigned int *round2State, byte *round2Block1, unsigned int *nonce_, checkFunc check)
+bool __Solve(unsigned int *round1State, unsigned char *round1Block2, unsigned __int32 *round2State, unsigned char *round2Block1, unsigned __int32 *nonce_, checkFunc check)
 {
     unsigned int nonce = *nonce_;
 
-    __sha256_hash_t *round1States[4];
-    round1States[0] = (__sha256_hash_t*)round1State;
-    round1States[1] = (__sha256_hash_t*)round1State;
-    round1States[2] = (__sha256_hash_t*)round1State;
-    round1States[3] = (__sha256_hash_t*)round1State;
+    // vector containing input round1 state
+    __m128i round1State_m128i[8];
+    for (int i = 0; i < 8; i++)
+        round1State_m128i[i] = _mm_set1_epi32(round1State[i]);
 
-    __sha256_block_t round1Block2_0;
-    __sha256_block_t round1Block2_1;
-    __sha256_block_t round1Block2_2;
-    __sha256_block_t round1Block2_3;
-    
-    byte *round1Block2 = round1Block1 + sizeof(__sha256_block_t);
-    memcpy(round1Block2, &round1Block2_0, sizeof(__sha256_block_t));
-    memcpy(round1Block2, &round1Block2_1, sizeof(__sha256_block_t));
-    memcpy(round1Block2, &round1Block2_2, sizeof(__sha256_block_t));
-    memcpy(round1Block2, &round1Block2_3, sizeof(__sha256_block_t));
+    // vector containing input round 1 block 2, contains the nonce field
+    __m128i round1Block2_m128i[16];
+    for (int i = 0; i < 16; i++)
+        round1Block2_m128i[i] = _mm_set1_epi32(((unsigned int*)round1Block2)[i]);
 
-    __sha256_block_t *round1Blocks2[4];
-    round1Blocks2[0] = &round1Block2_0;
-    round1Blocks2[1] = &round1Block2_1;
-    round1Blocks2[2] = &round1Block2_2;
-    round1Blocks2[3] = &round1Block2_3;
+    // vector containing input round 2 state, initialized
+    __m128i round2State_m128i[8];
+    for (int i = 0; i < 8; i++)
+        round2State_m128i[i] = _mm_set1_epi32(round2State[i]);
 
-    __sha256_hash_t *round2States[4];
-    round2States[0] = (__sha256_hash_t*)round2State;
-    round2States[1] = (__sha256_hash_t*)round2State;
-    round2States[2] = (__sha256_hash_t*)round2State;
-    round2States[3] = (__sha256_hash_t*)round2State;
+    // vector containing round 2 block, to which the state from round 1 should be output
+    __m128i round2Block1_m128i[16];
+    for (int i = 0; i < 16; i++)
+        round2Block1_m128i[i] = _mm_set1_epi32(((unsigned int*)round2Block1)[i]);
 
-    __sha256_block_t round2Block1_0;
-    __sha256_block_t round2Block1_1;
-    __sha256_block_t round2Block1_2;
-    __sha256_block_t round2Block1_3;
-    
-    memcpy(round2Block1, &round2Block1_0, sizeof(__sha256_block_t));
-    memcpy(round2Block1, &round2Block1_1, sizeof(__sha256_block_t));
-    memcpy(round2Block1, &round2Block1_2, sizeof(__sha256_block_t));
-    memcpy(round2Block1, &round2Block1_3, sizeof(__sha256_block_t));
+    // vector containing the final output from round 2
+    __m128i round2State2_m128i[8];
 
-    __sha256_block_t *round2Blocks1[4];
-    round2Blocks1[0] = &round2Block1_0;
-    round2Blocks1[1] = &round2Block1_1;
-    round2Blocks1[2] = &round2Block1_2;
-    round2Blocks1[3] = &round2Block1_3;
+    // vector containing integers to incremenet nonce values per-hash
+    __m128i nonce_inc_m128i = _mm_set1_epi32(4);
 
-    __sha256_hash_t *round2Block1AsHash[4];
-    round2Block1AsHash[0] = (__sha256_hash_t*)&round2Block1_0;
-    round2Block1AsHash[1] = (__sha256_hash_t*)&round2Block1_1;
-    round2Block1AsHash[2] = (__sha256_hash_t*)&round2Block1_2;
-    round2Block1AsHash[3] = (__sha256_hash_t*)&round2Block1_3;
-    
-    __sha256_hash_t round2Hash_0;
-    __sha256_hash_t round2Hash_1;
-    __sha256_hash_t round2Hash_2;
-    __sha256_hash_t round2Hash_3;
+    // initial nonce vector
+    __m128i nonce_m128i = _mm_set_epi32(nonce + 0, nonce + 1, nonce + 2, nonce + 3);
 
-    __sha256_hash_t *round2Hashes[4];
-    round2Hashes[0] = &round2Hash_0;
-    round2Hashes[1] = &round2Hash_1;
-    round2Hashes[2] = &round2Hash_2;
-    round2Hashes[3] = &round2Hash_3;
+    unsigned int count = 0;
 
     for (;;)
     {
-        round1Block2_0[3] = nonce + 0;
-        round1Block2_1[3] = nonce + 1;
-        round1Block2_2[3] = nonce + 2;
-        round1Block2_3[3] = nonce + 3;
+        // store the new nonce values into round 1 block 2
+        round1Block2_m128i[3] = nonce_m128i;
 
-        __sha256_int(round1States, round1Blocks2, round2Block1AsHash);
-        __sha256_int(round2States, round2Blocks1, round2Hashes);
+        __sha256_transform(round1State_m128i, round1Block2_m128i, round2Block1_m128i);
+        __sha256_transform(round2Block1_m128i, round2State_m128i, round2State2_m128i);
+        
+        // compare last int of output to zeros, matching words set to 0xFFFFFFFF
+        __m128i p = _mm_cmpeq_epi32(round2State2_m128i[7], _mm_setzero_si128());
 
-        for (int i = 0; i < 4; i++)
-            if (round2Hashes[7] = 0)
+        // cast into two 64 bit ints, these values let us narrow down whether any bits are set
+        unsigned __int64 *p64 = (unsigned __int64*)&p;
+
+        count++;
+
+        // one of the two sides of the vector has values
+        if ((p64[0] != 0) | (p64[1] != 0))
+        {
+            // first result
+            if (_mm_extract_epi16(p, 0) != 0)
             {
-                *nonce_ = nonce + i;
+                *nonce_ = nonce += 0;
                 return true;
             }
 
-        if (nonce % 1048576 == 0)
-            if (!check(1048576))
-                return false;
+            // second result
+            if (_mm_extract_epi16(p, 2) != 0)
+            {
+                *nonce_ = nonce += 1;
+                return true;
+            }
+            
+            // third result
+            if (_mm_extract_epi16(p, 4) != 0)
+            {
+                *nonce_ = nonce += 2;
+                return true;
+            }
 
+            // fourth result
+            if (_mm_extract_epi16(p, 6) != 0)
+            {
+                *nonce_ = nonce += 3;
+                return true;
+            }
+        }
+
+        if ((nonce % 131072) == 0 && nonce > 0)
+        {
+            if (!check(count))
+                return false;
+            count = 0;
+        }
+
+        nonce_m128i = _mm_add_epi32(nonce_m128i, nonce_inc_m128i);
         nonce += 4;
     }
 
@@ -119,7 +123,7 @@ namespace BitMaker
             public ref class SseCpuHasher sealed abstract
             {
 
-                public: static Nullable<unsigned int> Solve(unsigned int* round1State, byte* round1Block1, unsigned int* round2State, byte* round2Block1, CheckDelegate^ check) 
+                public: static Nullable<unsigned int> Solve(unsigned int* round1State, unsigned char* round1Block1, unsigned int* round2State, unsigned char* round2Block1, CheckDelegate^ check) 
                 {
                     unsigned int nonce = 0;
                     

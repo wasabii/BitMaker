@@ -6,11 +6,10 @@ namespace BitMaker.Miner.Cpu
     public class ManagedCpuSolver : CpuSolver
     {
 
-        public override unsafe uint? Solve(CpuMiner cpu, Work work, uint* round1State, byte* round1Block1, uint* round2State, byte* round2Block1)
+        public override unsafe uint? Solve(CpuMiner cpu, Work work, uint* round1State, byte* round1Block2, uint* round2State, byte* round2Block1)
         {
             uint nonce = 0;
 
-            byte* round1Block2 = round1Block1 + Sha256.SHA256_BLOCK_SIZE;
             uint* round2State2 = stackalloc uint[Sha256.SHA256_STATE_SIZE];
 
             for (; ; )
