@@ -1,4 +1,5 @@
 ﻿using BitMaker.Utils.Native;
+using System.Management;
 
 namespace BitMaker.Miner.Cpu
 {

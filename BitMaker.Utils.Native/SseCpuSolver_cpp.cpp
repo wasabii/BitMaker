@@ -1,26 +1,20 @@
 #include "Stdafx.h"
+#include "SseCpuSolver_cpp.h"
 
 #pragma managed(push, off)
 
-static const uint32_t sha256_consts[] =
-{
-    0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5,
-    0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
-    0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3,
-    0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
-    0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc,
-    0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
-    0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7,
-    0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
-    0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13,
-    0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
-    0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3,
-    0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
-    0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5,
-    0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
-    0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208,
-    0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2,
-};
+#define UINT32_MAX 2147483647
+
+#define endian_swap(value) ((value & 0x000000ffU) << 24 | (value & 0x0000ff00U) << 8 | (value & 0x00ff0000U) >> 8 | (value & 0xff000000U) >> 24)
+
+#define mm_or4(a, b, c, d) (_mm_or_si128(_mm_or_si128(_mm_or_si128(a, b), c), d))
+
+#define mm_endian_swap(value) ( \
+        mm_or4( \
+            _mm_slli_epi32(_mm_and_si128(value, _mm_set1_epi32(0x000000ff)), 24), \
+            _mm_slli_epi32(_mm_and_si128(value, _mm_set1_epi32(0x0000ff00)), 8), \
+            _mm_srli_epi32(_mm_and_si128(value, _mm_set1_epi32(0x00ff0000)), 8), \
+            _mm_srli_epi32(_mm_and_si128(value, _mm_set1_epi32(0xff000000)), 24)))
 
 #define SHR(word, shift) (_mm_srli_epi32(word, shift))
 
@@ -327,4 +321,92 @@ static inline void sha256_transform(__m128i *state, __m128i *block, __m128i *dst
     dst[7] = add2(state[7], h);
 }
 
-#pragma managed(push, on)
+// unmanaged Solve implementation
+bool __Solve(unsigned int *round1State, unsigned char *round1Block2, unsigned __int32 *round2State, unsigned char *round2Block1, unsigned __int32 *nonce_, statusFunc status)
+{
+    // start at existing nonce
+    unsigned int nonce = endian_swap(((unsigned int*)round1Block2)[3]);
+
+    // vector containing input round1 state
+    __m128i round1State_m128i[8];
+    for (int i = 0; i < 8; i++)
+        round1State_m128i[i] = _mm_set1_epi32(round1State[i]);
+
+    // vector containing input round 1 block 2, contains the nonce field
+    __m128i round1Block2_m128i[16];
+    for (int i = 0; i < 16; i++)
+        round1Block2_m128i[i] = _mm_set1_epi32(((unsigned __int32*)round1Block2)[i]);
+
+    // vector containing input round 2 state, initialized
+    __m128i round2State_m128i[8];
+    for (int i = 0; i < 8; i++)
+        round2State_m128i[i] = _mm_set1_epi32(round2State[i]);
+
+    // vector containing round 2 block, to which the state from round 1 should be output
+    __m128i round2Block1_m128i[16];
+    for (int i = 0; i < 16; i++)
+        round2Block1_m128i[i] = _mm_set1_epi32(((unsigned __int32*)round2Block1)[i]);
+
+    // vector containing the final output from round 2
+    __m128i round2State2_m128i[8];
+
+    // initial nonce vector
+    __m128i nonce_inc_m128i = _mm_set_epi32(0, 1, 2, 3);
+
+    for (;;)
+    {
+        // set nonce in blocks
+        round1Block2_m128i[3] = mm_endian_swap(_mm_add_epi32(_mm_set1_epi32(nonce), nonce_inc_m128i));
+        
+        // transform variable second half of block using saved state from first block, into pre-padded round 2 block (end of first hash)
+        sha256_transform(round1State_m128i, round1Block2_m128i, round2Block1_m128i);
+
+        // transform round 2 block into round 2 state (second hash)
+        sha256_transform(round2State_m128i, round2Block1_m128i, round2State2_m128i);
+        
+        // isolate 0x00000000, segment to in64 for easier testing
+        __m128i p = _mm_cmpeq_epi32(round2State2_m128i[7], _mm_setzero_si128());
+        unsigned __int64 *p64 = (unsigned __int64*)&p;
+
+        // one of the two sides of the vector has values
+        if ((p64[0] != 0) | (p64[1] != 0))
+        {
+            // first result
+            if (_mm_extract_epi16(p, 0) != 0)
+            {
+                *nonce_ = nonce + 3;
+                return true;
+            }
+
+            // second result
+            if (_mm_extract_epi16(p, 2) != 0)
+            {
+                *nonce_ = nonce + 2;
+                return true;
+            }
+            
+            // third result
+            if (_mm_extract_epi16(p, 4) != 0)
+            {
+                *nonce_ = nonce + 1;
+                return true;
+            }
+
+            // fourth result
+            if (_mm_extract_epi16(p, 6) != 0)
+            {
+                *nonce_ = nonce + 0;
+                return true;
+            }
+        }
+
+        // report progress
+        if ((nonce = nonce + 4) % 65536 == 0)
+            if (!status(65536) || nonce == 0)
+                break;
+    }
+
+    return false;
+}
+
+#pragma managed(pop)

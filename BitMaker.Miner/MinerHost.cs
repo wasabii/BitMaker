@@ -368,19 +368,26 @@ namespace BitMaker.Miner
                 if (result == null)
                     return null;
 
+                // decode data
+                var data = Memory.Decode(result.Data);
+                if (data.Length != 128)
+                    throw new InvalidDataException("Received data is not valid.");
+
+                // extract only header portion
+                var header = new byte[80];
+                Array.Copy(data, header, 80);
+
+                var target = Memory.Decode(result.Target);
+                if (target.Length != 32)
+                    throw new InvalidDataException("Received target is not valid.");
+
                 // generate new work instance
                 var work = new Work()
                 {
                     BlockNumber = blockNumber,
-                    Header = Memory.Decode(result.Data),
-                    Target = Memory.Decode(result.Target),
+                    Header = header,
+                    Target = target,
                 };
-
-                if (work.Header == null || work.Header.Length != 128)
-                    throw new InvalidDataException("Received header is not valid.");
-
-                if (work.Target == null || work.Target.Length != 32)
-                    throw new InvalidDataException("Received target is not valid.");
 
                 return work;
             }
