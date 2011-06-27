@@ -54,10 +54,12 @@
     <Compile Include="ConfigurationSection.cs" />
     <Compile Include="IMiner.cs" />
     <Compile Include="IMinerContext.cs" />
+    <Compile Include="IMinerFactory.cs" />
     <Compile Include="JsonSubmitWork.cs" />
     <Compile Include="JsonGetWork.cs" />
     <Compile Include="MinerHost.cs" />
-    <Compile Include="MinerAttribute.cs" />
+    <Compile Include="MinerFactoryAttribute.cs" />
+    <Compile Include="MinerResource.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Work.cs" />
     <EmbeddedResource Include="Properties\Resources.resx">

@@ -40,13 +40,10 @@
     <Reference Include="System.Management" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CpuSolverAttribute.cs" />
-    <Compile Include="ICpuSolverStatus.cs" />
-    <Compile Include="SseCpuSolver.cs" />
     <Compile Include="CpuMiner.cs" />
-    <Compile Include="ManagedCpuSolver.cs" />
+    <Compile Include="CpuMinerFactory.cs" />
+    <Compile Include="CpuResource.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="CpuSolver.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\BitMaker.Miner\BitMaker.Miner.csproj">

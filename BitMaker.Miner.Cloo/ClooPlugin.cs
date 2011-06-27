@@ -8,7 +8,7 @@ using Cloo.Bindings;
 namespace BitMaker.Miner.Cloo
 {
 
-    [Miner]
+    [MinerFactory]
     public class ClooPlugin : IMiner
     {
 
@@ -225,25 +225,21 @@ void transform(char* state, char* input)
 }
 
 kernel void test(
-    global read_only  char* header_tail,
-    global read_only  char* midstate,
+    global read_only  char* round1State,
+    global read_only  char* round1Block2,
+    global read_only  char* round2State,
+    global read_only  char* round2Block1,
     global write_only uint* output)
 {
-    // dimensions define nonce value to be tested
-    uint d1 = get_global_id(0);
-    uint d2 = get_global_id(1);
-    uint d3 = get_global_id(2);
-    uint nonce = (d1 * 268435456) + (d2 * 1048576) + d3;
+    // dimension defines nonce value to be tested
+    uint nonce = get_global_id(0);
 
-    //char header_tail[64];
+    // copy round1Block2 to local versio
+    // modify nonce value in round1Block2
+    // sha256 transform round1Block2 into round2Block1
+    // transform round2Block1 using round2State into local output
 
-    // copy midstate to hash1[0:32], [33:32] should be hard coded to SHA256 padding
-    // transform hash1 with modified header_tail 
-
-    // init hash2[0:32] with h[]
-    // transform hash2 with hash1
-
-    // test that hash2[7] is equal to 0, if so, set nonce in output
+    // test that round2State output[7] is equal to 0, if so, set nonce in output
 
     return;
 }
@@ -255,10 +251,9 @@ kernel void test(
 
         public void Start(IMinerContext context)
         {
-            return;
-
             string code;
-            var kernelRes = Assembly.GetExecutingAssembly().GetManifestResourceStream("BitMaker.Miner.Plugin.Cloo.Miner.cl");
+
+            var kernelRes = Assembly.GetExecutingAssembly().GetManifestResourceStream("BitMaker.Miner.Cloo.Miner.cl");
             using (var rdr = new StreamReader(kernelRes))
                 code = clProgramSource;
 
@@ -266,7 +261,7 @@ kernel void test(
             var properties = new ComputeContextPropertyList(platform);
             device = platform.Devices[0];
             ccontext = new ComputeContext(platform.Devices, properties, null, IntPtr.Zero);
-            program = new ComputeProgram(ccontext, code);
+            program = new ComputeProgram(ccontext, clProgramSource);
             program.Build(null, null, notify, IntPtr.Zero);
         }
 

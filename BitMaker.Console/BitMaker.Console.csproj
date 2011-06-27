@@ -51,9 +51,13 @@
       <Project>{4276299E-7F12-438C-B963-2F7EAFC30C8F}</Project>
       <Name>BitMaker.Miner.Cloo</Name>
     </ProjectReference>
-    <ProjectReference Include="..\BitMaker.Miner.Cpu\BitMaker.Miner.Cpu.csproj">
-      <Project>{1DCB57B9-30CB-4557-AAE5-94481CFA6B13}</Project>
-      <Name>BitMaker.Miner.Cpu</Name>
+    <ProjectReference Include="..\BitMaker.Miner.Managed\BitMaker.Miner.Managed.csproj">
+      <Project>{41150B0B-C5B3-416D-9E17-218B4148D745}</Project>
+      <Name>BitMaker.Miner.Managed</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\BitMaker.Miner.Sse\BitMaker.Miner.Sse.csproj">
+      <Project>{8396D0FC-C3ED-45B3-A9BE-8F4961C0BBB1}</Project>
+      <Name>BitMaker.Miner.Sse</Name>
     </ProjectReference>
     <ProjectReference Include="..\BitMaker.Miner\BitMaker.Miner.csproj">
       <Project>{9231C5BC-33FE-485D-87F6-A72F9A5C919D}</Project>

@@ -24,6 +24,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BitMaker.Miner.Cloo", "BitM
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BitMaker.Miner.Cpu", "BitMaker.Miner.Cpu\BitMaker.Miner.Cpu.csproj", "{1DCB57B9-30CB-4557-AAE5-94481CFA6B13}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BitMaker.Miner.Managed", "BitMaker.Miner.Managed\BitMaker.Miner.Managed.csproj", "{41150B0B-C5B3-416D-9E17-218B4148D745}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BitMaker.Miner.Sse", "BitMaker.Miner.Sse\BitMaker.Miner.Sse.csproj", "{8396D0FC-C3ED-45B3-A9BE-8F4961C0BBB1}"
+EndProject
 Global
 	GlobalSection(TestCaseManagementSettings) = postSolution
 		CategoryFile = BitMaker.vsmdi
@@ -65,6 +69,12 @@ Global
 		{1DCB57B9-30CB-4557-AAE5-94481CFA6B13}.Debug|x64.Build.0 = Debug|Any CPU
 		{1DCB57B9-30CB-4557-AAE5-94481CFA6B13}.Release|x64.ActiveCfg = Release|Any CPU
 		{1DCB57B9-30CB-4557-AAE5-94481CFA6B13}.Release|x64.Build.0 = Release|Any CPU
+		{41150B0B-C5B3-416D-9E17-218B4148D745}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{41150B0B-C5B3-416D-9E17-218B4148D745}.Release|x64.ActiveCfg = Release|Any CPU
+		{41150B0B-C5B3-416D-9E17-218B4148D745}.Release|x64.Build.0 = Release|Any CPU
+		{8396D0FC-C3ED-45B3-A9BE-8F4961C0BBB1}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{8396D0FC-C3ED-45B3-A9BE-8F4961C0BBB1}.Release|x64.ActiveCfg = Release|Any CPU
+		{8396D0FC-C3ED-45B3-A9BE-8F4961C0BBB1}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

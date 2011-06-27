@@ -3,17 +3,15 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>
-    </ProductVersion>
+    <ProductVersion>8.0.30703</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{EE089490-919E-4EC1-BBE9-F4C3909945C0}</ProjectGuid>
+    <ProjectGuid>{41150B0B-C5B3-416D-9E17-218B4148D745}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>BitMaker.Utils.Tests</RootNamespace>
-    <AssemblyName>BitMaker.Utils.Tests</AssemblyName>
+    <RootNamespace>BitMaker.Miner.Managed</RootNamespace>
+    <AssemblyName>BitMaker.Miner.Managed</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
-    <ProjectTypeGuids>{3AC096D0-A1C2-E12C-1390-A8335801FDAB};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -35,19 +33,18 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Microsoft.VisualStudio.QualityTools.UnitTestFramework, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
     <Reference Include="System" />
-    <Reference Include="System.Core">
-      <RequiredTargetFramework>3.5</RequiredTargetFramework>
-    </Reference>
+    <Reference Include="System.ComponentModel.Composition" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <CodeAnalysisDependentAssemblyPaths Condition=" '$(VS100COMNTOOLS)' != '' " Include="$(VS100COMNTOOLS)..\IDE\PrivateAssemblies">
-      <Visible>False</Visible>
-    </CodeAnalysisDependentAssemblyPaths>
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="MemoryTest.cs" />
+    <Compile Include="ManagedMinerFactory.cs" />
+    <Compile Include="ManagedMiner.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -59,22 +56,12 @@
       <Project>{9231C5BC-33FE-485D-87F6-A72F9A5C919D}</Project>
       <Name>BitMaker.Miner</Name>
     </ProjectReference>
-    <ProjectReference Include="..\BitMaker.Utils.Native\BitMaker.Utils.Native.vcxproj">
-      <Project>{90AA6371-FF81-4F7C-BC63-D993C7873FC2}</Project>
-      <Name>BitMaker.Utils.Native</Name>
-    </ProjectReference>
     <ProjectReference Include="..\BitMaker.Utils\BitMaker.Utils.csproj">
       <Project>{24BBFAE2-CC57-4909-A34B-ED84068EA795}</Project>
       <Name>BitMaker.Utils</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup>
-    <Shadow Include="Test References\BitMaker.Utils.accessor" />
-  </ItemGroup>
-  <ItemGroup>
-    <Shadow Include="Test References\BitMaker.Miner.Cpu.accessor" />
-  </ItemGroup>
-  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

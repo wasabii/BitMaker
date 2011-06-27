@@ -1,7 +1,7 @@
 #include "stdafx.h"
 
-#include "SseCpuSolver.h"
-#include "SseCpuSolver_cpp.h"
+#include "SseMinerUtils.h"
+#include "SseMinerUtils_cpp.h"
 
 using namespace System;
 using namespace System::Runtime::InteropServices;
@@ -15,31 +15,31 @@ namespace BitMaker
         namespace Native
         {
 
-            public delegate bool StatusDelegate(unsigned int hashCount);
+            public delegate bool CheckDelegate(unsigned int hashCount);
 
-            public ref class SseCpuHasher sealed abstract
+            public ref class SseMinerUtils sealed abstract
             {
 
             public:
 
-                static Nullable<unsigned int> Solve(unsigned int* round1State, unsigned char* round1Block1, unsigned int* round2State, unsigned char* round2Block1, StatusDelegate^ status)
+                static Nullable<unsigned int> Search(unsigned int* round1State, unsigned char* round1Block1, unsigned int* round2State, unsigned char* round2Block1, CheckDelegate^ check)
                 {
                     unsigned int nonce;
                     
                     // create function pointer for 'status', and ensure it doesn't get collected
-                    GCHandle statchH = GCHandle::Alloc(status);
-                    statusFunc statusPtr = (statusFunc)(void*)Marshal::GetFunctionPointerForDelegate(status);
+                    GCHandle checkH = GCHandle::Alloc(check);
+                    checkFunc checkPtr = (checkFunc)(void*)Marshal::GetFunctionPointerForDelegate(check);
 
                     try
                     {
-                        if (__Solve(round1State, round1Block1, round2State, round2Block1, &nonce, statusPtr))
+                        if (__Search(round1State, round1Block1, round2State, round2Block1, &nonce, checkPtr))
                             return Nullable<unsigned int>(nonce);
                         else
                             return Nullable<unsigned int>();
                     }
                     finally
                     {
-                        statchH.Free();
+                        checkH.Free();
                     }
                 }
 

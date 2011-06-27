@@ -2,18 +2,13 @@
 {
 
     /// <summary>
-    /// Interface required by plugin implementations.
+    /// Interface required by miner implementations.
     /// </summary>
     public interface IMiner
     {
 
         /// <summary>
-        /// Starts execution of the plugin.
-        /// </summary>
-        void Start(IMinerContext context);
-
-        /// <summary>
-        /// Stops execution of the plugin.
+        /// Stops execution of the miner.
         /// </summary>
         void Stop();
 

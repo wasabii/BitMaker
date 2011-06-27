@@ -14,10 +14,10 @@
     <ClInclude Include="Stdafx.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SseCpuSolver.h">
+    <ClInclude Include="SseMinerUtils_cpp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SseCpuSolver_cpp.h">
+    <ClInclude Include="SseMinerUtils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -28,10 +28,10 @@
     <ClCompile Include="Stdafx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="SseCpuSolver.cpp">
+    <ClCompile Include="SseMinerUtils_cpp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="SseCpuSolver_cpp.cpp">
+    <ClCompile Include="SseMinerUtils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
