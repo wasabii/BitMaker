@@ -25,9 +25,14 @@ namespace BitMaker.Miner
         private object syncRoot = new object();
 
         /// <summary>
-        /// Ensures we don't start or stop multiple times.
+        /// Thread that starts execution of the miners.
         /// </summary>
-        private bool started = false;
+        private Thread mainThread;
+
+        /// <summary>
+        /// Indicates that the host should stop.
+        /// </summary>
+        private CancellationTokenSource mainThreadCancel;
 
         /// <summary>
         /// Gets the current block number
@@ -75,15 +80,15 @@ namespace BitMaker.Miner
         private long hashCount;
 
         /// <summary>
-        /// Imported plugins.
+        /// Available miner factories.
         /// </summary>
         [ImportMany]
         public IEnumerable<IMinerFactory> MinerFactories { get; set; }
 
         /// <summary>
-        /// Started miners.
+        /// Currently executing miners.
         /// </summary>
-        private List<IMiner> miners = new List<IMiner>();
+        public List<MinerEntry> Miners { get; private set; }
 
         /// <summary>
         /// Initializes a new instance.
@@ -94,6 +99,7 @@ namespace BitMaker.Miner
             new CompositionContainer(new DirectoryCatalog(".", "*.dll")).SatisfyImportsOnce(this);
 
             // default value
+            Miners = new List<MinerEntry>();
             CurrentBlockNumber = 0;
         }
 
@@ -102,13 +108,37 @@ namespace BitMaker.Miner
         /// </summary>
         public void Start()
         {
-            lock (syncRoot)
-            {
-                if (started)
-                    return;
-                started = true;
+            if (mainThread != null)
+                return;
 
-                // recalculate statistics periodically
+            // recalculate statistics periodically
+            mainThreadCancel = new CancellationTokenSource();
+            mainThread = new Thread(MainThread);
+            mainThread.Start();
+        }
+
+        /// <summary>
+        /// Stops execution of the miner. Blocks until shutdown is complete.
+        /// </summary>
+        public void Stop()
+        {
+            if (mainThread == null)
+                return;
+
+            // indicates that any outstanding processes should stop
+            mainThreadCancel.Cancel();
+            mainThread.Join();
+            mainThread = null;
+        }
+
+        /// <summary>
+        /// Begins program execution on an independent thread so as not to block callers.
+        /// </summary>
+        private void MainThread()
+        {
+            try
+            {
+                // clear statistics
                 hashesPerSecond = 0;
                 statisticsHashCount = 0;
                 hashCount = 0;
@@ -117,41 +147,6 @@ namespace BitMaker.Miner
                 statisticsTimer = new Timer(CalculateStatistics, null, 0, statisticsPeriod);
                 statisticsStopWatch = new Stopwatch();
 
-                // begin loading miners on separate thread so as not to block caller
-                new Thread(StartThread).Start();
-            }
-        }
-
-        /// <summary>
-        /// Stops execution of the miner. Blocks until shutdown is complete.
-        /// </summary>
-        public void Stop()
-        {
-            lock (syncRoot)
-            {
-                if (!started)
-                    return;
-                started = false;
-
-                // shut down each plugin
-                foreach (var i in miners)
-                    i.Stop();
-
-                statisticsTimer.Dispose();
-                statisticsTimer = null;
-                statisticsStopWatch = null;
-                refreshTimer.Dispose();
-                refreshTimer = null;
-            }
-        }
-
-        /// <summary>
-        /// Begins program execution on an independent thread so as not to block callers.
-        /// </summary>
-        private void StartThread()
-        {
-            lock (syncRoot)
-            {
                 // resources, with the miner factories that can use them
                 var resourceSets = MinerFactories
                     .SelectMany(i => i.Resources.Select(j => new { Factory = i, Resource = j }))
@@ -173,6 +168,9 @@ namespace BitMaker.Miner
                         // multiple miners claim the ability to consume this resource
                         foreach (var factory in resourceSet.Factories)
                         {
+                            if (mainThreadCancel.IsCancellationRequested)
+                                return;
+
                             // sample the hash rate from the proposed miner
                             int hashes = SampleMiner(factory, resourceSet.Resource);
                             if (hashes > topHashCount)
@@ -183,13 +181,76 @@ namespace BitMaker.Miner
                         }
                     }
 
+                    if (mainThreadCancel.IsCancellationRequested)
+                        return;
+
                     // start production miner
-                    var miner = topFactory.StartMiner(this, resourceSet.Resource);
-                    miners.Add(miner);
+                    StartMiner(topFactory, resourceSet.Resource, this);
                 }
 
                 // periodically check latest block number
                 refreshTimer = new Timer(RefreshBlock, null, 0, refreshPeriod);
+
+                // wait until we're told to terminate
+                lock (syncRoot)
+                    while (!mainThreadCancel.IsCancellationRequested)
+                        Monitor.Wait(syncRoot, 2000);
+            }
+            finally
+            {
+                // shut down each executing miner
+                foreach (var i in Miners)
+                {
+                    i.Miner.Stop();
+                    Miners.Remove(i);
+                }
+
+                // stop statistics
+                if (statisticsTimer != null)
+                {
+                    statisticsTimer.Dispose();
+                    statisticsTimer = null;
+                }
+
+                statisticsStopWatch = null;
+
+                // stop block refresh
+                if (refreshTimer != null)
+                {
+                    refreshTimer.Dispose();
+                    refreshTimer = null;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Starts a new miner.
+        /// </summary>
+        /// <param name="factory"></param>
+        /// <param name="resource"></param>
+        /// <param name="context"></param>
+        /// <returns></returns>
+        private IMiner StartMiner(IMinerFactory factory, MinerResource resource, IMinerContext context)
+        {
+            lock (syncRoot)
+            {
+                var miner = factory.StartMiner(context, resource);
+                Miners.Add(new MinerEntry(miner, resource));
+                return miner;
+            }
+        }
+
+        /// <summary>
+        /// Stops the given miner.
+        /// </summary>
+        /// <param name="miner"></param>
+        private void StopMiner(IMiner miner)
+        {
+            lock (syncRoot)
+            {
+                var entry = Miners.Single(i => i.Miner == miner);
+                miner.Stop();
+                Miners.Remove(entry);
             }
         }
 
@@ -283,20 +344,23 @@ namespace BitMaker.Miner
         /// <param name="state"></param>
         private void CalculateStatistics(object state)
         {
-            if (!started)
-                return;
+            lock (syncRoot)
+            {
+                if (mainThread == null || mainThreadCancel.IsCancellationRequested)
+                    return;
 
-            // obtain current values, then restart watch
-            statisticsStopWatch.Stop();
-            var hc = Interlocked.Exchange(ref statisticsHashCount, 0);
-            var dif = statisticsStopWatch.ElapsedMilliseconds;
-            statisticsStopWatch.Restart();
+                // obtain current values, then restart watch
+                statisticsStopWatch.Stop();
+                var hc = Interlocked.Exchange(ref statisticsHashCount, 0);
+                var dif = statisticsStopWatch.ElapsedMilliseconds;
+                statisticsStopWatch.Restart();
 
-            // add periodic count to total
-            Interlocked.Add(ref hashCount, hc);
+                // add periodic count to total
+                Interlocked.Add(ref hashCount, hc);
 
-            if (dif > 1000)
-                hashesPerSecond = (int)(hc / (dif / 1000));
+                if (dif > 1000)
+                    hashesPerSecond = (int)(hc / (dif / 1000));
+            }
         }
 
         /// <summary>
@@ -541,14 +605,14 @@ namespace BitMaker.Miner
             var ctx = new SampleMinerContext(this);
 
             // begin the miner
-            var miner = factory.StartMiner(ctx, resource);
+            var miner = StartMiner(factory, resource, ctx);
 
             // allow the miner to work for a few seconds
             Thread.Sleep(5000);
 
             // pull the hash count immediately before stopping
             var hashCount = ctx.hashCount;
-            miner.Stop();
+            StopMiner(miner);
 
             // return the hash count generated by the miner in the alloted time
             return hashCount;

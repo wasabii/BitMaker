@@ -57,6 +57,7 @@
     <Compile Include="IMinerFactory.cs" />
     <Compile Include="JsonSubmitWork.cs" />
     <Compile Include="JsonGetWork.cs" />
+    <Compile Include="MinerEntry.cs" />
     <Compile Include="MinerHost.cs" />
     <Compile Include="MinerFactoryAttribute.cs" />
     <Compile Include="MinerResource.cs" />
