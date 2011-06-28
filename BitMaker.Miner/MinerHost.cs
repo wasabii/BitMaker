@@ -30,9 +30,14 @@ namespace BitMaker.Miner
         private Thread mainThread;
 
         /// <summary>
-        /// Indicates that the host should stop.
+        /// Indicates that the host should start.
         /// </summary>
-        private CancellationTokenSource mainThreadCancel;
+        private bool run;
+
+        /// <summary>
+        /// Indicates that the host has started.
+        /// </summary>
+        private bool running;
 
         /// <summary>
         /// Gets the current block number
@@ -62,7 +67,7 @@ namespace BitMaker.Miner
         /// <summary>
         /// Timer that fires to collect statistics.
         /// </summary>
-        private Timer statisticsTimer;
+        private System.Timers.Timer statisticsTimer;
 
         /// <summary>
         /// Collects statistics about hash rate per second.
@@ -101,6 +106,12 @@ namespace BitMaker.Miner
             // default value
             Miners = new List<MinerEntry>();
             CurrentBlockNumber = 0;
+
+            // thread handles start and stop
+            mainThread = new Thread(MainThread);
+            mainThread.IsBackground = true;
+            mainThread.Name = "BitMaker.Miner Host Thread";
+            mainThread.Start();
         }
 
         /// <summary>
@@ -108,13 +119,11 @@ namespace BitMaker.Miner
         /// </summary>
         public void Start()
         {
-            if (mainThread != null)
-                return;
-
-            // recalculate statistics periodically
-            mainThreadCancel = new CancellationTokenSource();
-            mainThread = new Thread(MainThread);
-            mainThread.Start();
+            lock (syncRoot)
+            {
+                run = running = true;
+                Monitor.Pulse(syncRoot);
+            }
         }
 
         /// <summary>
@@ -122,13 +131,14 @@ namespace BitMaker.Miner
         /// </summary>
         public void Stop()
         {
-            if (mainThread == null)
-                return;
+            lock (syncRoot)
+            {
+                run = false;
+                Monitor.Pulse(syncRoot);
 
-            // indicates that any outstanding processes should stop
-            mainThreadCancel.Cancel();
-            mainThread.Join();
-            mainThread = null;
+                while (running)
+                    Monitor.Wait(syncRoot, 5000);
+            }
         }
 
         /// <summary>
@@ -136,16 +146,27 @@ namespace BitMaker.Miner
         /// </summary>
         private void MainThread()
         {
-            try
+            while (true)
             {
-                // clear statistics
-                hashesPerSecond = 0;
-                statisticsHashCount = 0;
-                hashCount = 0;
+                lock (syncRoot)
+                    while (!run)
+                        Monitor.Wait(syncRoot, 15000);
 
                 // begin timer to compile statistics, even while testing miners
-                statisticsTimer = new Timer(CalculateStatistics, null, 0, statisticsPeriod);
-                statisticsStopWatch = new Stopwatch();
+                lock (syncRoot)
+                {
+                    // clear statistics
+                    hashesPerSecond = 0;
+                    statisticsHashCount = 0;
+                    hashCount = 0;
+
+                    statisticsTimer = new System.Timers.Timer();
+                    statisticsTimer.Elapsed += (s, a) => CalculateStatistics();
+                    statisticsTimer.AutoReset = false;
+                    statisticsTimer.Interval = TimeSpan.FromSeconds(2).TotalMilliseconds;
+                    statisticsTimer.Start();
+                    statisticsStopWatch = new Stopwatch();
+                }
 
                 // resources, with the miner factories that can use them
                 var resourceSets = MinerFactories
@@ -168,9 +189,6 @@ namespace BitMaker.Miner
                         // multiple miners claim the ability to consume this resource
                         foreach (var factory in resourceSet.Factories)
                         {
-                            if (mainThreadCancel.IsCancellationRequested)
-                                return;
-
                             // sample the hash rate from the proposed miner
                             int hashes = SampleMiner(factory, resourceSet.Resource);
                             if (hashes > topHashCount)
@@ -178,11 +196,16 @@ namespace BitMaker.Miner
                                 topFactory = factory;
                                 topHashCount = hashes;
                             }
+
+                            // break out prematurely if told to stop
+                            if (!run)
+                                break;
                         }
                     }
 
-                    if (mainThreadCancel.IsCancellationRequested)
-                        return;
+                    // break out prematurely if told to stop
+                    if (!run)
+                        break;
 
                     // start production miner
                     StartMiner(topFactory, resourceSet.Resource, this);
@@ -193,32 +216,25 @@ namespace BitMaker.Miner
 
                 // wait until we're told to terminate
                 lock (syncRoot)
-                    while (!mainThreadCancel.IsCancellationRequested)
-                        Monitor.Wait(syncRoot, 2000);
-            }
-            finally
-            {
-                // shut down each executing miner
-                foreach (var i in Miners)
-                {
-                    i.Miner.Stop();
-                    Miners.Remove(i);
-                }
+                    while (run)
+                        Monitor.Wait(syncRoot, 5000);
 
-                // stop statistics
-                if (statisticsTimer != null)
+                // shut down each executing miner
+                while (Miners.Any())
+                    StopMiner(Miners[0].Miner);
+
+                // stop timers
+                lock (syncRoot)
                 {
                     statisticsTimer.Dispose();
                     statisticsTimer = null;
-                }
-
-                statisticsStopWatch = null;
-
-                // stop block refresh
-                if (refreshTimer != null)
-                {
+                    statisticsStopWatch = null;
                     refreshTimer.Dispose();
                     refreshTimer = null;
+
+                    // indicate that we have stopped
+                    running = false;
+                    Monitor.PulseAll(syncRoot);
                 }
             }
         }
@@ -339,16 +355,12 @@ namespace BitMaker.Miner
         }
 
         /// <summary>
-        /// Recalculates statistics.
+        /// Calculates statistics since previous invocation.
         /// </summary>
-        /// <param name="state"></param>
-        private void CalculateStatistics(object state)
+        private void CalculateStatistics()
         {
             lock (syncRoot)
             {
-                if (mainThread == null || mainThreadCancel.IsCancellationRequested)
-                    return;
-
                 // obtain current values, then restart watch
                 statisticsStopWatch.Stop();
                 var hc = Interlocked.Exchange(ref statisticsHashCount, 0);
@@ -360,6 +372,9 @@ namespace BitMaker.Miner
 
                 if (dif > 1000)
                     hashesPerSecond = (int)(hc / (dif / 1000));
+
+                // restart timer
+                statisticsTimer.Start();
             }
         }
 
