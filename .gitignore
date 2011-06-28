@@ -19,3 +19,7 @@
 /BitMaker.sdf
 /TestResults
 /x64
+/BitMaker.Miner.Managed/obj
+/BitMaker.Miner.Managed/bin
+/BitMaker.Miner.Sse/bin
+/BitMaker.Miner.Sse/obj
