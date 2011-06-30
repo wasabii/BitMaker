@@ -402,7 +402,7 @@ bool __Search(unsigned int *round1State, unsigned char *round1Block2, unsigned _
 
         // report progress, or check overflow
         if ((nonce += 4) % 65536 == 0)
-            if (!check(65536) || nonce == 0)
+            if (!check(65536) || nonce < 4)
                 break;
     }
 
