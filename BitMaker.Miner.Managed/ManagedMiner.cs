@@ -45,7 +45,7 @@ namespace BitMaker.Miner.Managed
                 return Context.CurrentBlockNumber == work.BlockNumber && !CancellationToken.IsCancellationRequested;
             });
 
-            // reset nonce
+            // starting nonce
             uint nonce = 0;
 
             // output for final hash
@@ -64,6 +64,7 @@ namespace BitMaker.Miner.Managed
 
                 // test for potentially valid hash
                 if (round2State2[7] == 0U)
+                    // actual nonce is flipped
                     return Memory.ReverseEndian(nonce);
 
                 // only report and check for exit conditions every so often

@@ -324,7 +324,7 @@ static inline void sha256_transform(__m128i *state, __m128i *block, __m128i *dst
 // unmanaged Search implementation
 bool __Search(unsigned int *round1State, unsigned char *round1Block2, unsigned __int32 *round2State, unsigned char *round2Block1, unsigned __int32 *nonce_, checkFunc check)
 {
-    // start at 0
+    // starting nonce
     unsigned int nonce = 0;
 
     // vector containing input round1 state
@@ -356,7 +356,7 @@ bool __Search(unsigned int *round1State, unsigned char *round1Block2, unsigned _
     for (;;)
     {
         // set nonce in blocks
-        round1Block2_m128i[3] = mm_endian_swap(_mm_add_epi32(_mm_set1_epi32(nonce), nonce_inc_m128i));
+        round1Block2_m128i[3] = _mm_add_epi32(_mm_set1_epi32(nonce), nonce_inc_m128i);
         
         // transform variable second half of block using saved state from first block, into pre-padded round 2 block (end of first hash)
         sha256_transform(round1State_m128i, round1Block2_m128i, round2Block1_m128i);
@@ -364,7 +364,7 @@ bool __Search(unsigned int *round1State, unsigned char *round1Block2, unsigned _
         // transform round 2 block into round 2 state (second hash)
         sha256_transform(round2State_m128i, round2Block1_m128i, round2State2_m128i);
         
-        // isolate 0x00000000, segment to in64 for easier testing
+        // isolate 0x00000000, segment to uint64 for easier testing
         __m128i p = _mm_cmpeq_epi32(round2State2_m128i[7], _mm_setzero_si128());
         unsigned __int64 *p64 = (unsigned __int64*)&p;
 
@@ -374,28 +374,28 @@ bool __Search(unsigned int *round1State, unsigned char *round1Block2, unsigned _
             // first result
             if (_mm_extract_epi16(p, 0) != 0)
             {
-                *nonce_ = nonce + 3;
+                *nonce_ = endian_swap(nonce + 3);
                 return true;
             }
 
             // second result
             if (_mm_extract_epi16(p, 2) != 0)
             {
-                *nonce_ = nonce + 2;
+                *nonce_ = endian_swap(nonce + 2);
                 return true;
             }
             
             // third result
             if (_mm_extract_epi16(p, 4) != 0)
             {
-                *nonce_ = nonce + 1;
+                *nonce_ = endian_swap(nonce + 1);
                 return true;
             }
 
             // fourth result
             if (_mm_extract_epi16(p, 6) != 0)
             {
-                *nonce_ = nonce + 0;
+                *nonce_ = endian_swap(nonce + 0);
                 return true;
             }
         }
