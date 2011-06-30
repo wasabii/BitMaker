@@ -57,7 +57,7 @@ namespace BitMaker.Miner
         /// <summary>
         /// Milliseconds between recalculation of statistics.
         /// </summary>
-        private static int statisticsPeriod = (int)TimeSpan.FromSeconds(3).TotalMilliseconds;
+        private static int statisticsPeriod = (int)TimeSpan.FromSeconds(.25).TotalMilliseconds;
 
         /// <summary>
         /// Time the statistics were last calculated.
@@ -78,6 +78,11 @@ namespace BitMaker.Miner
         /// To report on hash generation rate.
         /// </summary>
         private int statisticsHashCount;
+
+        /// <summary>
+        /// Tracks previous hash counts and elapsed time.
+        /// </summary>
+        private LinkedList<Tuple<long, long>> statisticsHistory;
 
         /// <summary>
         /// Total hash count.
@@ -158,12 +163,13 @@ namespace BitMaker.Miner
                     // clear statistics
                     hashesPerSecond = 0;
                     statisticsHashCount = 0;
+                    statisticsHistory = new LinkedList<Tuple<long, long>>();
                     hashCount = 0;
 
                     statisticsTimer = new System.Timers.Timer();
                     statisticsTimer.Elapsed += (s, a) => CalculateStatistics();
                     statisticsTimer.AutoReset = false;
-                    statisticsTimer.Interval = TimeSpan.FromSeconds(2).TotalMilliseconds;
+                    statisticsTimer.Interval = statisticsPeriod;
                     statisticsTimer.Start();
                     statisticsStopWatch = new Stopwatch();
                 }
@@ -229,6 +235,7 @@ namespace BitMaker.Miner
                     statisticsTimer.Dispose();
                     statisticsTimer = null;
                     statisticsStopWatch = null;
+                    statisticsHistory = null;
                     refreshTimer.Dispose();
                     refreshTimer = null;
 
@@ -364,14 +371,25 @@ namespace BitMaker.Miner
                 // obtain current values, then restart watch
                 statisticsStopWatch.Stop();
                 var hc = Interlocked.Exchange(ref statisticsHashCount, 0);
-                var dif = statisticsStopWatch.ElapsedMilliseconds;
+                var df = statisticsStopWatch.ElapsedMilliseconds;
                 statisticsStopWatch.Restart();
+
+                // append current statistics to the history
+                statisticsHistory.AddLast(new Tuple<long, long>(df, hc));
+
+                // keep statistics history limited
+                if (statisticsHistory.Count > 25)
+                    statisticsHistory.RemoveFirst();
 
                 // add periodic count to total
                 Interlocked.Add(ref hashCount, hc);
 
-                if (dif > 1000)
-                    hashesPerSecond = (int)(hc / (dif / 1000));
+                // total ellapsed time and hashes
+                long hdf = statisticsHistory.Sum(i => i.Item1);
+                long hhc = statisticsHistory.Sum(i => i.Item2);
+
+                if (hdf > 1000)
+                    hashesPerSecond = (int)(hhc / (hdf / 1000));
 
                 // restart timer
                 statisticsTimer.Start();

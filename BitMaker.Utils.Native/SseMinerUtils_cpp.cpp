@@ -324,8 +324,8 @@ static inline void sha256_transform(__m128i *state, __m128i *block, __m128i *dst
 // unmanaged Search implementation
 bool __Search(unsigned int *round1State, unsigned char *round1Block2, unsigned __int32 *round2State, unsigned char *round2Block1, unsigned __int32 *nonce_, checkFunc check)
 {
-    // start at existing nonce
-    unsigned int nonce = endian_swap(((unsigned int*)round1Block2)[3]);
+    // start at 0
+    unsigned int nonce = 0;
 
     // vector containing input round1 state
     __m128i round1State_m128i[8];
@@ -400,8 +400,8 @@ bool __Search(unsigned int *round1State, unsigned char *round1Block2, unsigned _
             }
         }
 
-        // report progress
-        if ((nonce = nonce + 4) % 65536 == 0)
+        // report progress, or check overflow
+        if ((nonce += 4) % 65536 == 0)
             if (!check(65536) || nonce == 0)
                 break;
     }

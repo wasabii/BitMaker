@@ -158,81 +158,81 @@ namespace BitMaker.Utils.Tests
             }
         }
 
-        /// <summary>
-        /// Test class to run a solver against.
-        /// </summary>
-        private class CpuMinerStatus : ICpuSolverStatus
-        {
+        ///// <summary>
+        ///// Test class to run a solver against.
+        ///// </summary>
+        //private class CpuMinerStatus : ICpuSolverStatus
+        //{
 
-            private int hashCount = 0;
+        //    private int hashCount = 0;
 
-            /// <summary>
-            /// Stops the solver when it's hash count exceeds the solution.
-            /// </summary>
-            /// <param name="hashes"></param>
-            /// <returns></returns>
-            public bool Check(uint hashes)
-            {
-                return (hashCount += (int)hashes) <= 3000;
-            }
-        }
+        //    /// <summary>
+        //    /// Stops the solver when it's hash count exceeds the solution.
+        //    /// </summary>
+        //    /// <param name="hashes"></param>
+        //    /// <returns></returns>
+        //    public bool Check(uint hashes)
+        //    {
+        //        return (hashCount += (int)hashes) <= 3000;
+        //    }
+        //}
 
-        [TestMethod]
-        public unsafe void BlockHeaderHashTest()
-        {
-            // sample work with immediate solution
-            var work = new Work()
-            {
-                BlockNumber = 0,
-                Header = Memory.Decode("00000001d915b8fd2face61c6fe22ab76cad5f46c11cebab697dbd9e00000804000000008fe5f19cbdd55b40db93be7ef8ae249e0b21ec6e29c833b186404de0de205cc54e0022ac1a132185007d1adf000000800000000000000000000000000000000000000000000000000000000000000000000000000000000080020000"),
-                Target = Memory.Decode("ffffffffffffffffffffffffffffffffffffffffffffffffffffffff00000000"),
-            };
+        //[TestMethod]
+        //public unsafe void BlockHeaderHashTest()
+        //{
+        //    // sample work with immediate solution
+        //    var work = new Work()
+        //    {
+        //        BlockNumber = 0,
+        //        Header = Memory.Decode("00000001d915b8fd2face61c6fe22ab76cad5f46c11cebab697dbd9e00000804000000008fe5f19cbdd55b40db93be7ef8ae249e0b21ec6e29c833b186404de0de205cc54e0022ac1a132185007d1adf000000800000000000000000000000000000000000000000000000000000000000000000000000000000000080020000"),
+        //        Target = Memory.Decode("ffffffffffffffffffffffffffffffffffffffffffffffffffffffff00000000"),
+        //    };
             
-            // allocate buffers to hold hashing work
-            byte[] round1Blocks = Sha256.AllocateInputBuffer(80);
-            uint[] round1State = Sha256.AllocateStateBuffer();
-            byte[] round2Blocks = Sha256.AllocateInputBuffer(Sha256.SHA256_HASH_SIZE);
-            uint[] round2State = Sha256.AllocateStateBuffer();
+        //    // allocate buffers to hold hashing work
+        //    byte[] round1Blocks = Sha256.AllocateInputBuffer(80);
+        //    uint[] round1State = Sha256.AllocateStateBuffer();
+        //    byte[] round2Blocks = Sha256.AllocateInputBuffer(Sha256.SHA256_HASH_SIZE);
+        //    uint[] round2State = Sha256.AllocateStateBuffer();
             
-            fixed (byte* round1BlocksPtr = round1Blocks, round2BlocksPtr = round2Blocks)
-            fixed (uint* round1StatePtr = round1State, round2StatePtr = round2State)
-            {
-                byte* round1Block1Ptr = round1BlocksPtr;
-                byte* round1Block2Ptr = round1BlocksPtr + Sha256.SHA256_BLOCK_SIZE;
+        //    fixed (byte* round1BlocksPtr = round1Blocks, round2BlocksPtr = round2Blocks)
+        //    fixed (uint* round1StatePtr = round1State, round2StatePtr = round2State)
+        //    {
+        //        byte* round1Block1Ptr = round1BlocksPtr;
+        //        byte* round1Block2Ptr = round1BlocksPtr + Sha256.SHA256_BLOCK_SIZE;
 
-                // header arrives in big endian, convert to host
-                fixed (byte* workHeaderPtr = work.Header)
-                    Memory.ReverseEndian((uint*)workHeaderPtr, (uint*)round1BlocksPtr, 20);
+        //        // header arrives in big endian, convert to host
+        //        fixed (byte* workHeaderPtr = work.Header)
+        //            Memory.ReverseEndian((uint*)workHeaderPtr, (uint*)round1BlocksPtr, 20);
 
-                // append '1' bit and trailing length
-                Sha256.Prepare(round1BlocksPtr, 80, 0);
-                Sha256.Prepare(round1BlocksPtr + Sha256.SHA256_BLOCK_SIZE, 80, 1);
+        //        // append '1' bit and trailing length
+        //        Sha256.Prepare(round1BlocksPtr, 80, 0);
+        //        Sha256.Prepare(round1BlocksPtr + Sha256.SHA256_BLOCK_SIZE, 80, 1);
 
-                // hash first half of header
-                Sha256.Initialize(round1StatePtr);
-                Sha256.Transform(round1StatePtr, round1BlocksPtr);
+        //        // hash first half of header
+        //        Sha256.Initialize(round1StatePtr);
+        //        Sha256.Transform(round1StatePtr, round1BlocksPtr);
 
-                // initialize values for round 2
-                Sha256.Initialize(round2StatePtr);
-                Sha256.Prepare(round2BlocksPtr, Sha256.SHA256_HASH_SIZE, 0);
+        //        // initialize values for round 2
+        //        Sha256.Initialize(round2StatePtr);
+        //        Sha256.Prepare(round2BlocksPtr, Sha256.SHA256_HASH_SIZE, 0);
 
-                // set the nonce back 1024 values
-                uint nonce = Memory.ReverseEndian(((uint*)round1Block2Ptr)[3]);
+        //        // set the nonce back 1024 values
+        //        uint nonce = Memory.ReverseEndian(((uint*)round1Block2Ptr)[3]);
 
-                // test each solver
-                foreach (var solver in new CpuSolver[] { new ManagedCpuSolver(), new SseCpuSolver(), })
-                {
-                    // reset nonce for solver, start 1000 nonce before solution
-                    ((uint*)round1Block2Ptr)[3] = Memory.ReverseEndian(nonce - 1000);
+        //        // test each solver
+        //        foreach (var solver in new CpuSolver[] { new ManagedCpuSolver(), new SseCpuSolver(), })
+        //        {
+        //            // reset nonce for solver, start 1000 nonce before solution
+        //            ((uint*)round1Block2Ptr)[3] = Memory.ReverseEndian(nonce - 1000);
                     
-                    // ask the solver to solve the work
-                    var nonce_ = solver.Solve(work, new CpuMinerStatus(), round1StatePtr, round1Block2Ptr, round2StatePtr, round2BlocksPtr);
+        //            // ask the solver to solve the work
+        //            var nonce_ = solver.Solve(work, new CpuMinerStatus(), round1StatePtr, round1Block2Ptr, round2StatePtr, round2BlocksPtr);
 
-                    Assert.AreEqual(nonce, nonce_, solver.GetType().Name);
-                }
-            }
+        //            Assert.AreEqual(nonce, nonce_, solver.GetType().Name);
+        //        }
+        //    }
 
-        }
+        //}
 
     }
 

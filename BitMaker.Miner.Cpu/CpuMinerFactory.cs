@@ -23,7 +23,7 @@ namespace BitMaker.Miner.Cpu
         /// <summary>
         /// <see cref="T:CpuMiner"/> can consume all of the available processors in the system.
         /// </summary>
-        public IEnumerable<MinerResource> Resources
+        public virtual IEnumerable<MinerResource> Resources
         {
             get { return cpuResources; }
         }

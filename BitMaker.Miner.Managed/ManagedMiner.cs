@@ -47,13 +47,15 @@ namespace BitMaker.Miner.Managed
 
             // reset nonce
             uint nonce = 0;
-            ((uint*)round1Block2)[3] = Memory.ReverseEndian(nonce);
 
             // output for final hash
             uint* round2State2 = stackalloc uint[Sha256.SHA256_STATE_SIZE];
 
             while (true)
             {
+                // update the nonce value
+                ((uint*)round1Block2)[3] = nonce;
+
                 // transform variable second half of block using saved state from first block, into pre-padded round 2 block (end of first hash)
                 Sha256.Transform(round1State, round1Block2, (uint*)round2Block1);
 
@@ -62,18 +64,11 @@ namespace BitMaker.Miner.Managed
 
                 // test for potentially valid hash
                 if (round2State2[7] == 0U)
-                    return nonce;
-
-                // update the nonce value
-                ((uint*)round1Block2)[3] = Memory.ReverseEndian(++nonce);
-
-                // at the end of our nonce values, we can't continue
-                if (nonce == uint.MaxValue)
-                    break;
+                    return Memory.ReverseEndian(nonce);
 
                 // only report and check for exit conditions every so often
                 if ((++nonce % 65536) == 0)
-                    if (!check(65536))
+                    if (!check(65536) || nonce == 0)
                         break;
             }
 

@@ -19,7 +19,7 @@ namespace BitMaker.Console
             global::System.Console.WriteLine();
 
             // render hash statistics
-            var timer = new Timer(TimerCallback, null, 0, 2000);
+            var timer = new Timer(TimerCallback, null, 0, 250);
 
             // wait for input from user to terminate
             global::System.Console.ReadLine();

@@ -108,11 +108,8 @@ namespace BitMaker.Miner.Cpu
             try
             {
                 // continue working until canceled
-                Work work;
                 while (!cts.IsCancellationRequested)
-                    if (Work(work = Context.GetWork(this, GetType().Name)))
-                        // solution found!
-                        Context.SubmitWork(this, work, GetType().Name);
+                    Work(Context.GetWork(this, GetType().Name));
             }
             catch (OperationCanceledException)
             {
@@ -158,11 +155,10 @@ namespace BitMaker.Miner.Cpu
         }
 
         /// <summary>
-        /// Attempts to solve the given work with the specified solver. Returns <c>true</c> if a solution is found.
-        /// <paramref name="work"/> is updated to reflect the solution.
+        /// Attempts to solve the given work with the specified solver.
         /// </summary>
         /// <param name="work"></param>
-        private unsafe bool Work(Work work)
+        private unsafe void Work(Work work)
         {
             // allocate buffers to hold hashing work
             byte[] round1Blocks, round2Blocks;
@@ -171,26 +167,22 @@ namespace BitMaker.Miner.Cpu
             // allocate buffers
             PrepareWork(work, out round1Blocks, out round1State, out round2Blocks, out round2State);
 
+            // search for nonce value
+            uint? nonce;
             fixed (byte* round1BlocksPtr = round1Blocks, round2BlocksPtr = round2Blocks)
             fixed (uint* round1StatePtr = round1State, round2StatePtr = round2State)
+                nonce = Search(work, round1StatePtr, round1BlocksPtr + Sha256.SHA256_BLOCK_SIZE, round2StatePtr, round2BlocksPtr);
+
+            // solution found!
+            if (nonce != null)
             {
-                // enable this in a bit, and feed it the results of the CPU miner, so we can check them against each other
-                uint? nonce = Search(work, round1StatePtr, round1BlocksPtr + Sha256.SHA256_BLOCK_SIZE, round2StatePtr, round2BlocksPtr);
+                // replace header data on work
+                fixed (byte* headerPtr = work.Header)
+                    ((uint*)headerPtr)[19] = Memory.ReverseEndian((uint)nonce);
 
-                // solution found!
-                if (nonce != null)
-                {
-                    // replace header data on work
-                    fixed (byte* headerPtr = work.Header)
-                        ((uint*)headerPtr)[19] = Memory.ReverseEndian((uint)nonce);
-
-                    // let the caller know
-                    return true;
-                }
+                // let the caller know
+                Context.SubmitWork(this, work, GetType().Name);
             }
-
-            // no solution
-            return false;
         }
 
         /// <summary>
