@@ -6,8 +6,8 @@
 /BitMaker.Console/obj
 /BitMaker.Miner/obj
 /BitMaker.Miner/bin
-/BitMaker.Miner.Cloo/bin
-/BitMaker.Miner.Cloo/obj
+/BitMaker.Miner.Gpu/bin
+/BitMaker.Miner.Gpu/obj
 /BitMaker.Miner.Cpu/bin
 /BitMaker.Miner.Cpu/obj
 /BitMaker.Utils.Tests/bin
