@@ -348,6 +348,10 @@ namespace BitMaker.Miner
         /// <returns></returns>
         public bool SubmitWork(IMiner miner, Work work, string comment)
         {
+            // validate header
+            if (!work.Validate())
+                Console.WriteLine("INVALID : {0,10} {1}", miner.GetType().Name, Memory.Encode(work.Header));
+
             return Retry(SubmitWorkImpl, miner, work, comment, TimeSpan.FromSeconds(5));
         }
 
@@ -500,6 +504,7 @@ namespace BitMaker.Miner
                 var header = new byte[80];
                 Array.Copy(data, header, 80);
 
+                // decode target
                 var target = Memory.Decode(result.Target);
                 if (target.Length != 32)
                     throw new InvalidDataException("Received target is not valid.");
