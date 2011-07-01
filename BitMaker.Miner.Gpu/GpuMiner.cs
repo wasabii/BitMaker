@@ -50,6 +50,8 @@ namespace BitMaker.Miner.Gpu
         private ComputeProgram clProgram;
         private ComputeCommandQueue clQueue;
         private ComputeKernel clKernel;
+        private ComputeBuffer<uint> clBuffer0;
+        private ComputeBuffer<uint> clBuffer1;
 
         /// <summary>
         /// Initializes a new instance.
@@ -127,8 +129,16 @@ namespace BitMaker.Miner.Gpu
                 // ignore
             }
 
+            clQueue.Finish();
+
             clKernel.Dispose();
             clKernel = null;
+
+            clBuffer0.Dispose();
+            clBuffer0 = null;
+
+            clBuffer1.Dispose();
+            clBuffer1 = null;
 
             clQueue.Dispose();
             clQueue = null;
@@ -196,6 +206,13 @@ namespace BitMaker.Miner.Gpu
             // context we'll be working underneath
             clContext = new ComputeContext(new ComputeDevice[] { clDevice }, new ComputeContextPropertyList(clDevice.Platform), null, IntPtr.Zero);
 
+            // queue to control device
+            clQueue = new ComputeCommandQueue(clContext, clDevice, ComputeCommandQueueFlags.None);
+
+            // buffers to store kernel output
+            clBuffer0 = new ComputeBuffer<uint>(clContext, ComputeMemoryFlags.ReadOnly, 16);
+            clBuffer1 = new ComputeBuffer<uint>(clContext, ComputeMemoryFlags.ReadOnly, 16);
+
             // kernel code
             string kernelCode;
             using (var rdr = new StreamReader(GetType().Assembly.GetManifestResourceStream("BitMaker.Miner.Gpu.DiabloMiner.cl")))
@@ -213,7 +230,6 @@ namespace BitMaker.Miner.Gpu
                 throw new Exception(clProgram.GetBuildLog(clDevice));
             }
 
-            clQueue = new ComputeCommandQueue(clContext, clDevice, ComputeCommandQueueFlags.None);
             clKernel = clProgram.CreateKernel("search");
         }
 
@@ -263,98 +279,93 @@ namespace BitMaker.Miner.Gpu
             PreVal4 = round1State[4] + Sha256.Sigma1(round1State2Pre[4]) + Sha256.Ch(round1State2Pre[4], round1State2Pre[5], round1State2Pre[6]) + Sha256.K[3];
             T1 = Sha256.Sigma0(round1State2Pre[0]) + Sha256.Maj(round1State2Pre[0], round1State2Pre[1], round1State2Pre[2]);
 
-            // initialize input and output buffers
-            using (var output0Buffer = new ComputeBuffer<uint>(clContext, ComputeMemoryFlags.WriteOnly, 16))
-            using (var output1Buffer = new ComputeBuffer<uint>(clContext, ComputeMemoryFlags.WriteOnly, 16))
+            // clear output buffers, in case they've already been used
+            uint[] outputZero = new uint[16];
+            clQueue.WriteToBuffer(outputZero, clBuffer0, true, null);
+            clQueue.WriteToBuffer(outputZero, clBuffer0, true, null);
+
+            // to hold output buffer
+            uint[] output = new uint[16];
+
+            // swaps between true and false to allow a kernel to execute while testing output of last run
+            bool outputAlt = true;
+
+            // size of local work groups
+            long localWorkSize = clDevice.MaxWorkGroupSize;
+
+            // number of items to dispatch to GPU at a time
+            long globalWorkSize = localWorkSize * localWorkSize * 8;
+
+            // begin working at 0
+            uint nonce = 0;
+
+            // continue dispatching work to the GPU
+            while (true)
             {
-                // to clear output buffer
-                uint[] outputZero = new uint[16];
+                // list of output events
+                var events = new ComputeEventList();
 
-                // to hold output buffer
-                uint[] output = new uint[16];
+                // read output into current output buffer then reset buffer
+                clQueue.ReadFromBuffer(outputAlt ? clBuffer0 : clBuffer1, ref output, true, events);
 
-                // swaps between true and false to allow a kernel to execute while testing output of last run
-                bool outputAlt = true;
+                // scan output buffer for produced nonce values
+                bool outputDirty = false;
+                for (int j = 0; j < 16; j++)
+                    if (output[j] != 0)
+                    {
+                        outputDirty = true;
 
-                // size of local work groups
-                long localWorkSize = clDevice.MaxWorkGroupSize;
+                        // replace header data on work
+                        fixed (byte* headerPtr = work.Header)
+                            ((uint*)headerPtr)[19] = output[j];
 
-                // number of items to dispatch to GPU at a time
-                long globalWorkSize = localWorkSize * localWorkSize * 8;
+                        // submit work for validation
+                        Context.SubmitWork(this, work, GetType().Name);
+                    }
 
-                // begin working at 0
-                uint nonce = 0;
+                // clear output buffer
+                if (outputDirty)
+                    clQueue.WriteToBuffer(outputZero, outputAlt ? clBuffer0 : clBuffer1, true, events);
 
-                // continue dispatching work to the GPU
-                while (true)
-                {
-                    // list of output events
-                    var events = new ComputeEventList();
+                // execute kernel with computed values
+                clQueue.Finish();
+                clKernel.SetValueArgument(0, round1State[0]);
+                clKernel.SetValueArgument(1, round1State[1]);
+                clKernel.SetValueArgument(2, round1State[2]);
+                clKernel.SetValueArgument(3, round1State[3]);
+                clKernel.SetValueArgument(4, round1State[4]);
+                clKernel.SetValueArgument(5, round1State[5]);
+                clKernel.SetValueArgument(6, round1State[6]);
+                clKernel.SetValueArgument(7, round1State[7]);
+                clKernel.SetValueArgument(8, round1State2Pre[4]);
+                clKernel.SetValueArgument(9, round1State2Pre[5]);
+                clKernel.SetValueArgument(10, round1State2Pre[6]);
+                clKernel.SetValueArgument(11, round1State2Pre[0]);
+                clKernel.SetValueArgument(12, round1State2Pre[1]);
+                clKernel.SetValueArgument(13, round1State2Pre[2]);
+                clKernel.SetValueArgument(14, nonce);
+                clKernel.SetValueArgument(15, W2);
+                clKernel.SetValueArgument(16, W16);
+                clKernel.SetValueArgument(17, W17);
+                clKernel.SetValueArgument(18, PreVal4);
+                clKernel.SetValueArgument(19, T1);
+                clKernel.SetMemoryArgument(20, outputAlt ? clBuffer0 : clBuffer1);
+                clQueue.Execute(clKernel, null, new long[] { globalWorkSize }, new long[] { localWorkSize }, events);
 
-                    // read output into current output buffer then reset buffer
-                    clQueue.ReadFromBuffer(outputAlt ? output0Buffer : output1Buffer, ref output, true, events);
+                // dispose of all events floating around in the list
+                foreach (var e in events)
+                    e.Dispose();
 
-                    // scan output buffer for produced nonce values
-                    bool outputDirty = false;
-                    for (int j = 0; j < 16; j++)
-                        if (output[j] != 0)
-                        {
-                            outputDirty = true;
+                // report that we just hashed the work size number of hashes
+                if (!check((uint)globalWorkSize))
+                    break;
 
-                            // replace header data on work
-                            fixed (byte* headerPtr = work.Header)
-                                ((uint*)headerPtr)[19] = output[j];
+                // update nonce and check whether it is now less than the work size, which indicates it overflowed
+                if ((nonce += (uint)globalWorkSize) < (uint)globalWorkSize)
+                    break;
 
-
-
-                            // submit work for validation
-                            Context.SubmitWork(this, work, GetType().Name);
-                        }
-
-                    // clear output buffer
-                    if (outputDirty)
-                        clQueue.WriteToBuffer(outputZero, outputAlt ? output0Buffer : output1Buffer, true, events);
-
-                    // execute kernel with computed values
-                    clQueue.Finish();
-                    clKernel.SetValueArgument(0, round1State[0]);
-                    clKernel.SetValueArgument(1, round1State[1]);
-                    clKernel.SetValueArgument(2, round1State[2]);
-                    clKernel.SetValueArgument(3, round1State[3]);
-                    clKernel.SetValueArgument(4, round1State[4]);
-                    clKernel.SetValueArgument(5, round1State[5]);
-                    clKernel.SetValueArgument(6, round1State[6]);
-                    clKernel.SetValueArgument(7, round1State[7]);
-                    clKernel.SetValueArgument(8, round1State2Pre[4]);
-                    clKernel.SetValueArgument(9, round1State2Pre[5]);
-                    clKernel.SetValueArgument(10, round1State2Pre[6]);
-                    clKernel.SetValueArgument(11, round1State2Pre[0]);
-                    clKernel.SetValueArgument(12, round1State2Pre[1]);
-                    clKernel.SetValueArgument(13, round1State2Pre[2]);
-                    clKernel.SetValueArgument(14, nonce);
-                    clKernel.SetValueArgument(15, W2);
-                    clKernel.SetValueArgument(16, W16);
-                    clKernel.SetValueArgument(17, W17);
-                    clKernel.SetValueArgument(18, PreVal4);
-                    clKernel.SetValueArgument(19, T1);
-                    clKernel.SetMemoryArgument(20, outputAlt ? output0Buffer : output1Buffer);
-                    clQueue.Execute(clKernel, null, new long[] { globalWorkSize }, new long[] { localWorkSize }, events);
-
-                    // dispose of all events floating around in the list
-                    foreach (var e in events)
-                        e.Dispose();
-
-                    // report that we just hashed the work size number of hashes
-                    if (!check((uint)globalWorkSize))
-                        break;
-
-                    // update nonce and check whether it is now less than the work size, which indicates it overflowed
-                    if ((nonce += (uint)globalWorkSize) < (uint)globalWorkSize)
-                        break;
-
-                    // next loop deals with other output buffer
-                    outputAlt = !outputAlt;
-                }
+                // next loop deals with other output buffer
+                outputAlt = !outputAlt;
             }
         }
 

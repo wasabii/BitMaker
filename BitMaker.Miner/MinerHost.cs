@@ -294,51 +294,34 @@ namespace BitMaker.Miner
         }
 
         /// <summary>
+        /// Invokes the given function repeatidly, until it succeeds, with a delay.
+        /// </summary>
+        /// <param name="func"></param>
+        /// <param name="delay"></param>
+        /// <returns></returns>
+        private static R Retry<R>(Func<R> func, TimeSpan delay)
+        {
+            while (true)
+                try
+                {
+                    return func();
+                }
+                catch (Exception)
+                {
+                    Thread.Sleep(delay);
+                }
+        }
+
+        /// <summary>
         /// Gets a new unit of work.
         /// </summary>
         /// <returns></returns>
         public Work GetWork(IMiner miner, string comment)
         {
-            return Retry(GetWorkImpl, miner, comment, TimeSpan.FromSeconds(5));
-        }
-
-        /// <summary>
-        /// Invokes the given function repeatidly, until it succeeds, with a delay.
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="func"></param>
-        /// <param name="delay"></param>
-        /// <returns></returns>
-        private R Retry<T1, T2, R>(Func<T1, T2, R> func, T1 arg0, T2 arg1, TimeSpan delay)
-        {
-            while (true)
-                try
-                {
-                    return func(arg0, arg1);
-                }
-                catch (Exception)
-                {
-                    Thread.Sleep(delay);
-                }
-        }
-        /// <summary>
-        /// Invokes the given function repeatidly, until it succeeds, with a delay.
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="func"></param>
-        /// <param name="delay"></param>
-        /// <returns></returns>
-        private R Retry<T1, T2, T3, R>(Func<T1, T2, T3, R> func, T1 arg0, T2 arg1, T3 arg2, TimeSpan delay)
-        {
-            while (true)
-                try
-                {
-                    return func(arg0, arg1, arg2);
-                }
-                catch (Exception)
-                {
-                    Thread.Sleep(delay);
-                }
+            return Retry(() =>
+            {
+                return GetWorkImpl(miner, comment);
+            }, TimeSpan.FromSeconds(5));
         }
 
         /// <summary>
@@ -352,7 +335,16 @@ namespace BitMaker.Miner
             if (!work.Validate())
                 Console.WriteLine("INVALID : {0,10} {1}", miner.GetType().Name, Memory.Encode(work.Header));
 
-            return Retry(SubmitWorkImpl, miner, work, comment, TimeSpan.FromSeconds(5));
+            return Retry(() =>
+            {
+                if (SubmitWorkImpl(miner, work, comment))
+                    return true;
+
+                // if server didn't accept our work, refresh the current block number, it might be expired
+                RefreshBlock(null);
+                return false;
+
+            }, TimeSpan.FromSeconds(5));
         }
 
         /// <summary>

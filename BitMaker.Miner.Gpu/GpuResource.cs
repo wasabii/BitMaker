@@ -1,5 +1,4 @@
-﻿
-namespace BitMaker.Miner.Gpu
+﻿namespace BitMaker.Miner.Gpu
 {
 
     public class GpuResource : MinerResource

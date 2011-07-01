@@ -1,7 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-
-using BitMaker.Miner.Cpu;
+﻿using BitMaker.Miner.Cpu;
 
 namespace BitMaker.Miner.Managed
 {
@@ -12,11 +9,6 @@ namespace BitMaker.Miner.Managed
     [MinerFactory]
     public class ManagedMinerFactory : CpuMinerFactory
     {
-
-        public override IEnumerable<MinerResource> Resources
-        {
-            get { return base.Resources; }
-        }
 
         /// <summary>
         /// Starts a new instance of the miner.
