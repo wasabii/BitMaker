@@ -244,26 +244,24 @@ namespace BitMaker.Miner.Gpu
             // static values for work
             uint W2, W16, W17, PreVal4, T1;
 
-            // build peices of the SHA-256 process that are static despite nonce
+            // build message schedule without nonce
+            uint* W = stackalloc uint[64];
             fixed (byte* round1BlocksPtr = round1Blocks)
-            {
-                // build message schedule
-                uint* W = stackalloc uint[64];
                 Sha256.Schedule(round1BlocksPtr + Sha256.SHA256_BLOCK_SIZE, W);
 
-                // complete first three rounds of state
-                round1State2Pre = Sha256.AllocateStateBuffer();
-                Array.Copy(round1State, round1State2Pre, Sha256.SHA256_STATE_SIZE);
-                Sha256.Round(ref round1State2Pre[0], ref round1State2Pre[1], ref round1State2Pre[2], ref round1State2Pre[3], ref round1State2Pre[4], ref round1State2Pre[5], ref round1State2Pre[6], ref round1State2Pre[7], W, 0);
-                Sha256.Round(ref round1State2Pre[0], ref round1State2Pre[1], ref round1State2Pre[2], ref round1State2Pre[3], ref round1State2Pre[4], ref round1State2Pre[5], ref round1State2Pre[6], ref round1State2Pre[7], W, 1);
-                Sha256.Round(ref round1State2Pre[0], ref round1State2Pre[1], ref round1State2Pre[2], ref round1State2Pre[3], ref round1State2Pre[4], ref round1State2Pre[5], ref round1State2Pre[6], ref round1State2Pre[7], W, 2);
+            // complete first three rounds of block 2
+            round1State2Pre = Sha256.AllocateStateBuffer();
+            Array.Copy(round1State, round1State2Pre, Sha256.SHA256_STATE_SIZE);
+            Sha256.Round(ref round1State2Pre[0], ref round1State2Pre[1], ref round1State2Pre[2], ref round1State2Pre[3], ref round1State2Pre[4], ref round1State2Pre[5], ref round1State2Pre[6], ref round1State2Pre[7], W, 0);
+            Sha256.Round(ref round1State2Pre[0], ref round1State2Pre[1], ref round1State2Pre[2], ref round1State2Pre[3], ref round1State2Pre[4], ref round1State2Pre[5], ref round1State2Pre[6], ref round1State2Pre[7], W, 1);
+            Sha256.Round(ref round1State2Pre[0], ref round1State2Pre[1], ref round1State2Pre[2], ref round1State2Pre[3], ref round1State2Pre[4], ref round1State2Pre[5], ref round1State2Pre[6], ref round1State2Pre[7], W, 2);
 
-                W2 = W[2];
-                W16 = W[16];
-                W17 = W[17];
-                PreVal4 = round1State[4] + (Sha256.Rotr(round1State2Pre[1], 6) ^ Sha256.Rotr(round1State2Pre[1], 11) ^ Sha256.Rotr(round1State2Pre[1], 25)) + (round1State2Pre[3] ^ (round1State2Pre[1] & (round1State2Pre[2] ^ round1State2Pre[3]))) + 0xe9b5dba5;
-                T1 = (Sha256.Rotr(round1State2Pre[5], 2) ^ Sha256.Rotr(round1State2Pre[5], 13) ^ Sha256.Rotr(round1State2Pre[5], 22)) + ((round1State2Pre[5] & round1State2Pre[6]) | (round1State2Pre[7] & (round1State2Pre[5] | round1State2Pre[6])));
-            }
+            // precalculated peices that are independent of nonce
+            W2 = W[2];
+            W16 = W[16];
+            W17 = W[17];
+            PreVal4 = round1State[4] + Sha256.Sigma1(round1State2Pre[4]) + Sha256.Ch(round1State2Pre[4], round1State2Pre[5], round1State2Pre[6]) + Sha256.K[3];
+            T1 = Sha256.Sigma0(round1State2Pre[0]) + Sha256.Maj(round1State2Pre[0], round1State2Pre[1], round1State2Pre[2]);
 
             // initialize input and output buffers
             using (var output0Buffer = new ComputeBuffer<uint>(clContext, ComputeMemoryFlags.WriteOnly, 16))
@@ -327,12 +325,12 @@ namespace BitMaker.Miner.Gpu
                     clKernel.SetValueArgument(5, round1State[5]);
                     clKernel.SetValueArgument(6, round1State[6]);
                     clKernel.SetValueArgument(7, round1State[7]);
-                    clKernel.SetValueArgument(8, round1State2Pre[1]);
-                    clKernel.SetValueArgument(9, round1State2Pre[2]);
-                    clKernel.SetValueArgument(10, round1State2Pre[3]);
-                    clKernel.SetValueArgument(11, round1State2Pre[5]);
-                    clKernel.SetValueArgument(12, round1State2Pre[6]);
-                    clKernel.SetValueArgument(13, round1State2Pre[7]);
+                    clKernel.SetValueArgument(8, round1State2Pre[4]);
+                    clKernel.SetValueArgument(9, round1State2Pre[5]);
+                    clKernel.SetValueArgument(10, round1State2Pre[6]);
+                    clKernel.SetValueArgument(11, round1State2Pre[0]);
+                    clKernel.SetValueArgument(12, round1State2Pre[1]);
+                    clKernel.SetValueArgument(13, round1State2Pre[2]);
                     clKernel.SetValueArgument(14, nonce);
                     clKernel.SetValueArgument(15, W2);
                     clKernel.SetValueArgument(16, W16);
