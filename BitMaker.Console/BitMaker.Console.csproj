@@ -47,6 +47,10 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\BitMaker.Miner.Gpu\BitMaker.Miner.Gpu.csproj">
+      <Project>{4276299E-7F12-438C-B963-2F7EAFC30C8F}</Project>
+      <Name>BitMaker.Miner.Gpu</Name>
+    </ProjectReference>
     <ProjectReference Include="..\BitMaker.Miner.Managed\BitMaker.Miner.Managed.csproj">
       <Project>{41150B0B-C5B3-416D-9E17-218B4148D745}</Project>
       <Name>BitMaker.Miner.Managed</Name>

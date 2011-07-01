@@ -241,6 +241,30 @@ namespace BitMaker.Miner.Gpu
             // allocate buffers and create partial hash
             PrepareWork(work, out round1Blocks, out round1State, out round2Blocks, out round2State);
 
+            // static values for work
+            uint W2, W16, W17, PreVal4, T1;
+
+            // build peices of the SHA-256 process that are static despite nonce
+            fixed (byte* round1BlocksPtr = round1Blocks)
+            {
+                // build message schedule
+                uint* W = stackalloc uint[64];
+                Sha256.Schedule(round1BlocksPtr + Sha256.SHA256_BLOCK_SIZE, W);
+
+                // complete first three rounds of state
+                round1State2Pre = Sha256.AllocateStateBuffer();
+                Array.Copy(round1State, round1State2Pre, Sha256.SHA256_STATE_SIZE);
+                Sha256.Round(ref round1State2Pre[0], ref round1State2Pre[1], ref round1State2Pre[2], ref round1State2Pre[3], ref round1State2Pre[4], ref round1State2Pre[5], ref round1State2Pre[6], ref round1State2Pre[7], W, 0);
+                Sha256.Round(ref round1State2Pre[0], ref round1State2Pre[1], ref round1State2Pre[2], ref round1State2Pre[3], ref round1State2Pre[4], ref round1State2Pre[5], ref round1State2Pre[6], ref round1State2Pre[7], W, 1);
+                Sha256.Round(ref round1State2Pre[0], ref round1State2Pre[1], ref round1State2Pre[2], ref round1State2Pre[3], ref round1State2Pre[4], ref round1State2Pre[5], ref round1State2Pre[6], ref round1State2Pre[7], W, 2);
+
+                W2 = W[2];
+                W16 = W[16];
+                W17 = W[17];
+                PreVal4 = round1State[4] + (Sha256.Rotr(round1State2Pre[1], 6) ^ Sha256.Rotr(round1State2Pre[1], 11) ^ Sha256.Rotr(round1State2Pre[1], 25)) + (round1State2Pre[3] ^ (round1State2Pre[1] & (round1State2Pre[2] ^ round1State2Pre[3]))) + 0xe9b5dba5;
+                T1 = (Sha256.Rotr(round1State2Pre[5], 2) ^ Sha256.Rotr(round1State2Pre[5], 13) ^ Sha256.Rotr(round1State2Pre[5], 22)) + ((round1State2Pre[5] & round1State2Pre[6]) | (round1State2Pre[7] & (round1State2Pre[5] | round1State2Pre[6])));
+            }
+
             // initialize input and output buffers
             using (var output0Buffer = new ComputeBuffer<uint>(clContext, ComputeMemoryFlags.WriteOnly, 16))
             using (var output1Buffer = new ComputeBuffer<uint>(clContext, ComputeMemoryFlags.WriteOnly, 16))
@@ -263,30 +287,6 @@ namespace BitMaker.Miner.Gpu
                 // begin working at 0
                 uint nonce = 0;
 
-                // static values for work
-                uint W2, W16, W17, PreVal4, T1;
-
-                // build peices of the SHA-256 process that are static despite nonce
-                fixed (byte* round1BlocksPtr = round1Blocks)
-                {
-                    // build message schedule
-                    uint* W = stackalloc uint[64];
-                    Sha256.Schedule(round1BlocksPtr + Sha256.SHA256_BLOCK_SIZE, W);
-
-                    // complete first three rounds of state
-                    round1State2Pre = Sha256.AllocateStateBuffer();
-                    Array.Copy(round1State, round1State2Pre, Sha256.SHA256_STATE_SIZE);
-                    Sha256.Round(ref round1State2Pre[0], ref round1State2Pre[1], ref round1State2Pre[2], ref round1State2Pre[3], ref round1State2Pre[4], ref round1State2Pre[5], ref round1State2Pre[6], ref round1State2Pre[7], W, 0);
-                    Sha256.Round(ref round1State2Pre[0], ref round1State2Pre[1], ref round1State2Pre[2], ref round1State2Pre[3], ref round1State2Pre[4], ref round1State2Pre[5], ref round1State2Pre[6], ref round1State2Pre[7], W, 1);
-                    Sha256.Round(ref round1State2Pre[0], ref round1State2Pre[1], ref round1State2Pre[2], ref round1State2Pre[3], ref round1State2Pre[4], ref round1State2Pre[5], ref round1State2Pre[6], ref round1State2Pre[7], W, 2);
-
-                    W2 = W[2];
-                    W16 = W[16];
-                    W17 = W[17];
-                    PreVal4 = round1State[4] + (Sha256.Rotr(round1State2Pre[1], 6) ^ Sha256.Rotr(round1State2Pre[1], 11) ^ Sha256.Rotr(round1State2Pre[1], 25)) + (round1State2Pre[3] ^ (round1State2Pre[1] & (round1State2Pre[2] ^ round1State2Pre[3]))) + 0xe9b5dba5;
-                    T1 = (Sha256.Rotr(round1State2Pre[5], 2) ^ Sha256.Rotr(round1State2Pre[5], 13) ^ Sha256.Rotr(round1State2Pre[5], 22)) + ((round1State2Pre[5] & round1State2Pre[6]) | (round1State2Pre[7] & (round1State2Pre[5] | round1State2Pre[6])));
-                }
-
                 // continue dispatching work to the GPU
                 while (true)
                 {
@@ -307,7 +307,7 @@ namespace BitMaker.Miner.Gpu
                             fixed (byte* headerPtr = work.Header)
                                 ((uint*)headerPtr)[19] = output[j];
 
-                            
+
 
                             // submit work for validation
                             Context.SubmitWork(this, work, GetType().Name);

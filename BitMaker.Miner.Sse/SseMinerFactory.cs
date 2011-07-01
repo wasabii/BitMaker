@@ -16,7 +16,6 @@ namespace BitMaker.Miner.Sse
         public override IEnumerable<MinerResource> Resources
         {
             get { return base.Resources; }
-            //get { return Enumerable.Empty<CpuResource>(); }
         }
 
         /// <summary>
