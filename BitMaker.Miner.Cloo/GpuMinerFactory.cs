@@ -23,7 +23,7 @@ namespace BitMaker.Miner.Gpu
                     Id = i.Name,
                     CLDeviceHandle = i.Handle,
                 })
-                .Take(0)
+                .Take(1)
                 .ToList();
 
         /// <summary>

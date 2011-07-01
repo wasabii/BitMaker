@@ -258,7 +258,7 @@ namespace BitMaker.Miner.Gpu
                 long localWorkSize = clDevice.MaxWorkGroupSize;
 
                 // number of items to dispatch to GPU at a time
-                long globalWorkSize = clDevice.MaxWorkGroupSize * clDevice.MaxWorkGroupSize * 32;
+                long globalWorkSize = localWorkSize * localWorkSize * 8;
 
                 // begin working at 0
                 uint nonce = 0;
@@ -343,12 +343,14 @@ namespace BitMaker.Miner.Gpu
                     if (!check((uint)globalWorkSize))
                         break;
 
-                    // cycle nonce and check whether it is now less than the work size, which indicates it overflowed
+                    // update nonce and check whether it is now less than the work size, which indicates it overflowed
                     if ((nonce += (uint)globalWorkSize) < (uint)globalWorkSize)
                         break;
 
                     // next loop deals with other output buffer
                     outputAlt = !outputAlt;
+
+                    Thread.Sleep(100);
                 }
             }
         }
