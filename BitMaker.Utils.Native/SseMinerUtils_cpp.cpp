@@ -9,90 +9,27 @@
 
 #define mm_or4(a, b, c, d) (_mm_or_si128(_mm_or_si128(_mm_or_si128(a, b), c), d))
 
-#define mm_endian_swap(value) ( \
-        mm_or4( \
-            _mm_slli_epi32(_mm_and_si128(value, _mm_set1_epi32(0x000000ff)), 24), \
-            _mm_slli_epi32(_mm_and_si128(value, _mm_set1_epi32(0x0000ff00)), 8), \
-            _mm_srli_epi32(_mm_and_si128(value, _mm_set1_epi32(0x00ff0000)), 8), \
-            _mm_srli_epi32(_mm_and_si128(value, _mm_set1_epi32(0xff000000)), 24)))
-
 #define SHR(word, shift) (_mm_srli_epi32(word, shift))
-
-//static inline __m128i SHR(__m128i word, int shift)
-//{
-//    return _mm_srli_epi32(word, shift);
-//}
 
 #define ROTR(word, shift) (_mm_or_si128(_mm_srli_epi32(word, shift), _mm_slli_epi32(word, 32 - shift)))
 
-//static inline __m128i ROTR(__m128i word, int shift)
-//{
-//    return _mm_or_si128(_mm_srli_epi32(word, shift), _mm_slli_epi32(word, 32 - shift));
-//}
-
 #define Ch(b, c, d) (_mm_xor_si128(_mm_and_si128(b, c), _mm_andnot_si128(b, d)))
-
-//static inline __m128i Ch(__m128i b, __m128i c, __m128i d)
-//{
-//
-//    return _mm_xor_si128(_mm_and_si128(b, c), _mm_andnot_si128(b, d));
-//}
 
 #define Maj(b, c, d) (_mm_xor_si128(_mm_xor_si128(_mm_and_si128(b, c), _mm_and_si128(b, d)), _mm_and_si128(c, d)))
 
-//static inline __m128i Maj(__m128i b, __m128i c, __m128i d)
-//{
-//    return _mm_xor_si128(_mm_xor_si128(_mm_and_si128(b, c), _mm_and_si128(b, d)), _mm_and_si128(c, d));
-//}
-
 #define Sigma0(x) (_mm_xor_si128(_mm_xor_si128(ROTR(x, 2), ROTR(x, 13)), ROTR(x, 22)))
-
-//static inline __m128i Sigma0(__m128i x)
-//{
-//    return _mm_xor_si128(_mm_xor_si128(ROTR(x, 2), ROTR(x, 13)), ROTR(x, 22));
-//}
 
 #define Sigma1(x) (_mm_xor_si128(_mm_xor_si128(ROTR(x, 6), ROTR(x, 11)), ROTR(x, 25)))
 
-//static inline __m128i Sigma1(__m128i x)
-//{
-//    return _mm_xor_si128(_mm_xor_si128(ROTR(x, 6), ROTR(x, 11)), ROTR(x, 25));
-//}
-
 #define sigma0(x) (_mm_xor_si128(_mm_xor_si128(ROTR(x, 7), ROTR(x, 18)), SHR(x, 3)))
-
-//static inline __m128i sigma0(__m128i x)
-//{
-//    return _mm_xor_si128(_mm_xor_si128(ROTR(x, 7), ROTR(x, 18)), SHR(x, 3));
-//}
 
 #define sigma1(x) (_mm_xor_si128(_mm_xor_si128(ROTR(x, 17), ROTR(x, 19)), SHR(x, 10)))
 
-//static inline __m128i sigma1(__m128i x)
-//{
-//    return _mm_xor_si128(_mm_xor_si128(ROTR(x, 17), ROTR(x, 19)), SHR(x, 10));
-//}
-
 #define add2(a, b) (_mm_add_epi32(a, b))
-
-//static inline __m128i add2(__m128i a, __m128i b)
-//{
-//    return _mm_add_epi32(a, b);
-//}
 
 #define add4(a, b, c, d) (add2(add2(a, b), add2(c, d)))
 
-//static inline __m128i add4(__m128i a, __m128i b, __m128i c, __m128i d)
-//{
-//    return _mm_add_epi32(_mm_add_epi32(_mm_add_epi32(a, b), c), d);
-//}
-
 #define add5(a, b, c, d, e) add2(add4(a, b, c, d), e)
-
-//static inline __m128i add5(__m128i a, __m128i b, __m128i c, __m128i d, __m128i e)
-//{
-//    return _mm_add_epi32(_mm_add_epi32(_mm_add_epi32(_mm_add_epi32(a, b), c), d), e);
-//}
 
 
 static inline void sha256_transform(__m128i *state, __m128i *block, __m128i *dst)
