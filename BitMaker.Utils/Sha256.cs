@@ -204,6 +204,17 @@ namespace BitMaker.Utils
             a = t1 + t2;
         }
 
+        public static unsafe void Schedule(byte* block, uint* W)
+        {
+            // first 16 bytes of schedule
+            for (int i = 0; i < 16; i++)
+                W[i] = ((uint*)block)[i];
+
+            // expand remainder of schedule
+            for (int i = 16; i < 64; i++)
+                W[i] = sigma1(W[i - 2]) + W[i - 7] + sigma0(W[i - 15]) + W[i - 16];
+        }
+
         /// <summary>
         /// Updates the hash state <paramref name="state"/> with the input values, writing the new state into <param
         /// name="dst"/>.
@@ -216,13 +227,8 @@ namespace BitMaker.Utils
             uint* H = stackalloc uint[8];
             uint* W = stackalloc uint[64];
 
-            // first 16 bytes of schedule
-            for (int i = 0; i < 16; i++)
-                W[i] = ((uint*)block)[i];
-
-            // expand remainder of schedule
-            for (int i = 16; i < 64; i++)
-                W[i] = sigma1(W[i - 2]) + W[i - 7] + sigma0(W[i - 15]) + W[i - 16];
+            // create message schedule
+            Schedule(block, W);
 
             // read existing state
             for (int i = 0; i < 8; i++)
@@ -256,7 +262,7 @@ namespace BitMaker.Utils
         public static unsafe void Finalize(uint* state, byte* output)
         {
             if (BitConverter.IsLittleEndian)
-                Memory.ReverseEndian(state, (uint*)output, SHA256_HASH_SIZE / sizeof(uint));
+                Memory.ReverseEndian(state, (uint*)output, SHA256_STATE_SIZE);
             else
                 Memory.Copy((byte*)state, output, SHA256_HASH_SIZE);
         }
