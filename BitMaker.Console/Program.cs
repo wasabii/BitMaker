@@ -32,9 +32,9 @@ namespace BitMaker.Console
 
         private static void TimerCallback(object state)
         {
-            global::System.Console.CursorLeft = 1;
+            global::System.Console.CursorLeft = 0;
             global::System.Console.CursorTop -= 1;
-            global::System.Console.WriteLine("{0,10:0,000} khash/s", engine.HashesPerSecond / 1000);
+            global::System.Console.WriteLine("{0,10:0,000} khash/s              ", engine.HashesPerSecond / 1000);
         }
 
     }
