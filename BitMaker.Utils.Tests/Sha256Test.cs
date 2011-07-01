@@ -177,62 +177,53 @@ namespace BitMaker.Utils.Tests
         //    }
         //}
 
-        //[TestMethod]
-        //public unsafe void BlockHeaderHashTest()
-        //{
-        //    // sample work with immediate solution
-        //    var work = new Work()
-        //    {
-        //        BlockNumber = 0,
-        //        Header = Memory.Decode("00000001d915b8fd2face61c6fe22ab76cad5f46c11cebab697dbd9e00000804000000008fe5f19cbdd55b40db93be7ef8ae249e0b21ec6e29c833b186404de0de205cc54e0022ac1a132185007d1adf000000800000000000000000000000000000000000000000000000000000000000000000000000000000000080020000"),
-        //        Target = Memory.Decode("ffffffffffffffffffffffffffffffffffffffffffffffffffffffff00000000"),
-        //    };
-            
-        //    // allocate buffers to hold hashing work
-        //    byte[] round1Blocks = Sha256.AllocateInputBuffer(80);
-        //    uint[] round1State = Sha256.AllocateStateBuffer();
-        //    byte[] round2Blocks = Sha256.AllocateInputBuffer(Sha256.SHA256_HASH_SIZE);
-        //    uint[] round2State = Sha256.AllocateStateBuffer();
-            
-        //    fixed (byte* round1BlocksPtr = round1Blocks, round2BlocksPtr = round2Blocks)
-        //    fixed (uint* round1StatePtr = round1State, round2StatePtr = round2State)
-        //    {
-        //        byte* round1Block1Ptr = round1BlocksPtr;
-        //        byte* round1Block2Ptr = round1BlocksPtr + Sha256.SHA256_BLOCK_SIZE;
+        [TestMethod]
+        public unsafe void BlockHeaderHashTest()
+        {
+            // sample work with immediate solution
+            var work = new Work()
+            {
+                BlockNumber = 0,
+                Header = Memory.Decode("00000001d915b8fd2face61c6fe22ab76cad5f46c11cebab697dbd9e00000804000000008fe5f19cbdd55b40db93be7ef8ae249e0b21ec6e29c833b186404de0de205cc54e0022ac1a132185007d1adf000000800000000000000000000000000000000000000000000000000000000000000000000000000000000080020000"),
+                Target = Memory.Decode("ffffffffffffffffffffffffffffffffffffffffffffffffffffffff00000000"),
+            };
 
-        //        // header arrives in big endian, convert to host
-        //        fixed (byte* workHeaderPtr = work.Header)
-        //            Memory.ReverseEndian((uint*)workHeaderPtr, (uint*)round1BlocksPtr, 20);
+            // allocate buffers to hold hashing work
+            byte[] round1Blocks = Sha256.AllocateInputBuffer(80);
+            uint[] round1State = Sha256.AllocateStateBuffer();
+            byte[] round2Blocks = Sha256.AllocateInputBuffer(Sha256.SHA256_HASH_SIZE);
+            uint[] round2State = Sha256.AllocateStateBuffer();
+            byte[] hash = Sha256.AllocateHashBuffer();
 
-        //        // append '1' bit and trailing length
-        //        Sha256.Prepare(round1BlocksPtr, 80, 0);
-        //        Sha256.Prepare(round1BlocksPtr + Sha256.SHA256_BLOCK_SIZE, 80, 1);
+            fixed (byte* round1BlocksPtr = round1Blocks, round2BlocksPtr = round2Blocks, hashPtr = hash, targetPtr = work.Target)
+            fixed (uint* round1StatePtr = round1State, round2StatePtr = round2State)
+            {
+                byte* round1Block1Ptr = round1BlocksPtr;
+                byte* round1Block2Ptr = round1BlocksPtr + Sha256.SHA256_BLOCK_SIZE;
+                byte* round2Block1Ptr = round2BlocksPtr;
 
-        //        // hash first half of header
-        //        Sha256.Initialize(round1StatePtr);
-        //        Sha256.Transform(round1StatePtr, round1BlocksPtr);
+                // header arrives in big endian, convert to host
+                fixed (byte* workHeaderPtr = work.Header)
+                    Memory.ReverseEndian((uint*)workHeaderPtr, (uint*)round1BlocksPtr, 20);
 
-        //        // initialize values for round 2
-        //        Sha256.Initialize(round2StatePtr);
-        //        Sha256.Prepare(round2BlocksPtr, Sha256.SHA256_HASH_SIZE, 0);
+                // prepare states and blocks
+                Sha256.Initialize(round1StatePtr);
+                Sha256.Initialize(round2StatePtr);
+                Sha256.Prepare(round1Block1Ptr, 80, 0);
+                Sha256.Prepare(round1Block2Ptr, 80, 1);
+                Sha256.Prepare(round2BlocksPtr, Sha256.SHA256_HASH_SIZE, 0);
 
-        //        // set the nonce back 1024 values
-        //        uint nonce = Memory.ReverseEndian(((uint*)round1Block2Ptr)[3]);
+                // hash first half of header
+                Sha256.Transform(round1StatePtr, round1Block1Ptr);
+                Sha256.Transform(round1StatePtr, round1Block2Ptr, (uint*)round2Block1Ptr);
+                Sha256.Transform(round2StatePtr, round2Block1Ptr);
+                Sha256.Finalize(round2StatePtr, hashPtr);
 
-        //        // test each solver
-        //        foreach (var solver in new CpuSolver[] { new ManagedCpuSolver(), new SseCpuSolver(), })
-        //        {
-        //            // reset nonce for solver, start 1000 nonce before solution
-        //            ((uint*)round1Block2Ptr)[3] = Memory.ReverseEndian(nonce - 1000);
-                    
-        //            // ask the solver to solve the work
-        //            var nonce_ = solver.Solve(work, new CpuMinerStatus(), round1StatePtr, round1Block2Ptr, round2StatePtr, round2BlocksPtr);
+                for (int i = 7; i >= 0; i--)
+                    Assert.IsFalse(((uint*)hashPtr)[i] > ((uint*)targetPtr)[i]);
+            }
 
-        //            Assert.AreEqual(nonce, nonce_, solver.GetType().Name);
-        //        }
-        //    }
-
-        //}
+        }
 
     }
 
