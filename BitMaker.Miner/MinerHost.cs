@@ -58,7 +58,7 @@ namespace BitMaker.Miner
         /// <summary>
         /// Url delivered by the server for long pulling.
         /// </summary>
-        private Uri refreshLongPullUrl;
+        private Uri refreshLongPollUrl;
 
         /// <summary>
         /// Milliseconds between recalculation of statistics.
@@ -403,7 +403,7 @@ namespace BitMaker.Miner
             {
                 try
                 {
-                    if (refreshLongPullUrl == null)
+                    if (refreshLongPollUrl == null)
                     {
                         GetWorkRpc(null, null);
                         Thread.Sleep(refreshPeriod);
@@ -468,7 +468,7 @@ namespace BitMaker.Miner
         /// <returns></returns>
         private HttpWebRequest OpenLp(IMiner miner, string comment)
         {
-            return Open(refreshLongPullUrl, "GET", miner, comment);
+            return Open(refreshLongPollUrl, "GET", miner, comment);
         }
 
         /// <summary>
@@ -484,7 +484,7 @@ namespace BitMaker.Miner
                 CurrentBlockNumber = blockNumber = uint.Parse(webResponse.Headers["X-Blocknum"]);
 
             if (webResponse.Headers["X-Long-Polling"] != null)
-                refreshLongPullUrl = new Uri(GetRpcUri(), webResponse.Headers["X-Long-Polling"]);
+                refreshLongPollUrl = new Uri(GetRpcUri(), webResponse.Headers["X-Long-Polling"]);
 
             // retrieve invocation response
             using (var txt = new StreamReader(webResponse.GetResponseStream()))
