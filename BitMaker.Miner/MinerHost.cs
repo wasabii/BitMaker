@@ -13,7 +13,6 @@ using BitMaker.Utils;
 
 using Jayrock.Json;
 using Jayrock.Json.Conversion;
-using System.Threading.Tasks;
 
 namespace BitMaker.Miner
 {
