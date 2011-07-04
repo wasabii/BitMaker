@@ -258,7 +258,7 @@ namespace BitMaker.Miner.Gpu
             PrepareWork(work, out round1Blocks, out round1State, out round2Blocks, out round2State);
 
             // static values for work
-            uint W2, W16, W17, PreVal4, T1;
+            uint W16, W17, W18, W19, W31, W32, PreVal4, T1, PreVal4_plus_state0, PreVal4_plus_T1;
 
             // build message schedule without nonce
             uint* W = stackalloc uint[64];
@@ -273,11 +273,16 @@ namespace BitMaker.Miner.Gpu
             Sha256.Round(ref round1State2Pre[0], ref round1State2Pre[1], ref round1State2Pre[2], ref round1State2Pre[3], ref round1State2Pre[4], ref round1State2Pre[5], ref round1State2Pre[6], ref round1State2Pre[7], W, 2);
 
             // precalculated peices that are independent of nonce
-            W2 = W[2];
             W16 = W[16];
             W17 = W[17];
+            W18 = W[18];
+            W19 = W[19];
+            W31 = W[31];
+            W32 = W[32];
             PreVal4 = round1State[4] + Sha256.Sigma1(round1State2Pre[4]) + Sha256.Ch(round1State2Pre[4], round1State2Pre[5], round1State2Pre[6]) + Sha256.K[3];
             T1 = Sha256.Sigma0(round1State2Pre[0]) + Sha256.Maj(round1State2Pre[0], round1State2Pre[1], round1State2Pre[2]);
+            PreVal4_plus_state0 = PreVal4 + round1State[0];
+            PreVal4_plus_T1 = PreVal4 + T1;
 
             // clear output buffers, in case they've already been used
             uint[] outputZero = new uint[16];
@@ -344,12 +349,15 @@ namespace BitMaker.Miner.Gpu
                 clKernel.SetValueArgument(12, round1State2Pre[1]);
                 clKernel.SetValueArgument(13, round1State2Pre[2]);
                 clKernel.SetValueArgument(14, nonce);
-                clKernel.SetValueArgument(15, W2);
-                clKernel.SetValueArgument(16, W16);
-                clKernel.SetValueArgument(17, W17);
-                clKernel.SetValueArgument(18, PreVal4);
-                clKernel.SetValueArgument(19, T1);
-                clKernel.SetMemoryArgument(20, outputAlt ? clBuffer0 : clBuffer1);
+                clKernel.SetValueArgument(15, W16);
+                clKernel.SetValueArgument(16, W17);
+                clKernel.SetValueArgument(17, W18);
+                clKernel.SetValueArgument(18, W19);
+                clKernel.SetValueArgument(19, W31);
+                clKernel.SetValueArgument(20, W32);
+                clKernel.SetValueArgument(21, PreVal4_plus_state0);
+                clKernel.SetValueArgument(22, PreVal4_plus_T1);
+                clKernel.SetMemoryArgument(23, outputAlt ? clBuffer0 : clBuffer1);
                 clQueue.Execute(clKernel, null, new long[] { globalWorkSize }, new long[] { localWorkSize }, events);
 
                 // dispose of all events floating around in the list
