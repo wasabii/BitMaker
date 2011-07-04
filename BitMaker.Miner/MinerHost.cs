@@ -7,11 +7,13 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading;
+using System.Web;
 
 using BitMaker.Utils;
 
 using Jayrock.Json;
 using Jayrock.Json.Conversion;
+using System.Threading.Tasks;
 
 namespace BitMaker.Miner
 {
@@ -50,9 +52,14 @@ namespace BitMaker.Miner
         private static int refreshPeriod = (int)TimeSpan.FromSeconds(15).TotalMilliseconds;
 
         /// <summary>
-        /// Timer that pulls current block.
+        /// Thread that pulls current block.
         /// </summary>
-        private Timer refreshTimer;
+        private Thread refreshThread;
+
+        /// <summary>
+        /// Url delivered by the server for long pulling.
+        /// </summary>
+        private Uri refreshLongPullUrl;
 
         /// <summary>
         /// Milliseconds between recalculation of statistics.
@@ -218,7 +225,8 @@ namespace BitMaker.Miner
                 }
 
                 // periodically check latest block number
-                refreshTimer = new Timer(RefreshBlock, null, 0, refreshPeriod);
+                refreshThread = new Thread(RefreshThreadMain);
+                refreshThread.Start();
 
                 // wait until we're told to terminate
                 lock (syncRoot)
@@ -236,8 +244,12 @@ namespace BitMaker.Miner
                     statisticsTimer = null;
                     statisticsStopWatch = null;
                     statisticsHistory = null;
-                    refreshTimer.Dispose();
-                    refreshTimer = null;
+
+                    if (refreshThread != null)
+                    {
+                        refreshThread.Join();
+                        refreshThread = null;
+                    }
 
                     // indicate that we have stopped
                     running = false;
@@ -320,7 +332,7 @@ namespace BitMaker.Miner
         {
             return Retry(() =>
             {
-                return GetWorkImpl(miner, comment);
+                return GetWorkRpc(miner, comment);
             }, TimeSpan.FromSeconds(5));
         }
 
@@ -335,16 +347,7 @@ namespace BitMaker.Miner
             if (!work.Validate())
                 Console.WriteLine("INVALID : {0,10} {1}", miner.GetType().Name, Memory.Encode(work.Header));
 
-            return Retry(() =>
-            {
-                if (SubmitWorkImpl(miner, work, comment))
-                    return true;
-
-                // if server didn't accept our work, refresh the current block number, it might be expired
-                RefreshBlock(null);
-                return false;
-
-            }, TimeSpan.FromSeconds(5));
+            return Retry(() => SubmitWorkRpc(miner, work, comment), TimeSpan.FromSeconds(5));
         }
 
         /// <summary>
@@ -393,38 +396,47 @@ namespace BitMaker.Miner
         }
 
         /// <summary>
-        /// Refreshes latest block number by simply retrieving new work.
+        /// Entry point for thread responsible for detecting changes in the current block number.
         /// </summary>
-        /// <param name="state"></param>
-        private void RefreshBlock(object state)
+        private void RefreshThreadMain()
         {
-            try
+            while (run)
             {
-                GetWorkImpl(null, null);
-            }
-            catch (WebException)
-            {
-                // ignore
+                try
+                {
+                    if (refreshLongPullUrl == null)
+                    {
+                        GetWorkRpc(null, null);
+                        Thread.Sleep(refreshPeriod);
+                    }
+                    else
+                        GetWorkLp(null, null);
+                }
+                catch (WebException)
+                {
+                    // ignore
+                }
             }
         }
 
         #region JSON-RPC
 
-        /// <summary>
-        /// Generates a <see cref="T:HttpWebRequest"/> for communicating with the node's JSON-API.
-        /// </summary>
-        /// <returns></returns>
-        private static HttpWebRequest RpcOpen(IMiner miner, string comment)
+        private static Uri GetRpcUri()
         {
-            // configuration info, containing user name and password
-            var url = ConfigurationSection.GetDefaultSection().Url;
-            var user = url.UserInfo.Split(':');
+            return ConfigurationSection.GetDefaultSection().Url;
+        }
+
+        private static HttpWebRequest Open(Uri url, string method, IMiner miner, string comment)
+        {
+            // extract user information from url
+            var user = url.UserInfo.Split(':').Select(i => HttpUtility.UrlDecode(i)).ToArray();
 
             // create request, authenticating using information in the url
             var req = (HttpWebRequest)HttpWebRequest.Create(url);
+            req.Timeout = (int)TimeSpan.FromSeconds(60).TotalMilliseconds;
             req.Credentials = new NetworkCredential(user[0], user[1]);
             req.PreAuthenticate = true;
-            req.Method = "POST";
+            req.Method = method;
             req.Pipelined = true;
             req.UserAgent = "BitMaker";
             req.Headers["X-BitMaker-MachineName"] = Environment.MachineName;
@@ -439,38 +451,44 @@ namespace BitMaker.Miner
         }
 
         /// <summary>
-        /// Invokes the 'getwork' JSON method and parses the result into a new <see cref="T:Work"/> instance.
+        /// Creates a <see cref="HttpWebRequest"/> for JSON-RPC.
         /// </summary>
+        /// <param name="miner"></param>
+        /// <param name="comment"></param>
         /// <returns></returns>
-        private unsafe Work GetWorkImpl(IMiner miner, string comment)
+        private static HttpWebRequest OpenRpc(IMiner miner, string comment)
         {
-            var req = RpcOpen(miner, comment);
+            return Open(GetRpcUri(), "POST", miner, comment);
+        }
 
-            // submit method invocation
-            using (var txt = new StreamWriter(req.GetRequestStream()))
-            using (var wrt = new JsonTextWriter(txt))
-            {
-                wrt.WriteStartObject();
-                wrt.WriteMember("id");
-                wrt.WriteString("json");
-                wrt.WriteMember("method");
-                wrt.WriteString("getwork");
-                wrt.WriteMember("params");
-                wrt.WriteStartArray();
-                wrt.WriteEndArray();
-                wrt.WriteEndObject();
-                wrt.Flush();
-            }
+        /// <summary>
+        /// Creates a <see cref="HttpWebRequest"/> for long-polling.
+        /// </summary>
+        /// <param name="miner"></param>
+        /// <param name="comment"></param>
+        /// <returns></returns>
+        private HttpWebRequest OpenLp(IMiner miner, string comment)
+        {
+            return Open(refreshLongPullUrl, "GET", miner, comment);
+        }
 
-            var httpResponse = req.GetResponse();
-
+        /// <summary>
+        /// Parses a <see cref="WebResponse"/> containing the results of a 'getwork' request.
+        /// </summary>
+        /// <param name="webResponse"></param>
+        /// <returns></returns>
+        private Work ParseGetWork(WebResponse webResponse)
+        {
             // obtain and update current block number
             uint blockNumber = 0;
-            if (httpResponse.Headers["X-Blocknum"] != null)
-                CurrentBlockNumber = blockNumber = uint.Parse(httpResponse.Headers["X-Blocknum"]);
+            if (webResponse.Headers["X-Blocknum"] != null)
+                CurrentBlockNumber = blockNumber = uint.Parse(webResponse.Headers["X-Blocknum"]);
+
+            if (webResponse.Headers["X-Long-Polling"] != null)
+                refreshLongPullUrl = new Uri(GetRpcUri(), webResponse.Headers["X-Long-Polling"]);
 
             // retrieve invocation response
-            using (var txt = new StreamReader(httpResponse.GetResponseStream()))
+            using (var txt = new StreamReader(webResponse.GetResponseStream()))
             using (var rdr = new JsonTextReader(txt))
             {
                 if (!rdr.MoveToContent() && rdr.Read())
@@ -509,8 +527,68 @@ namespace BitMaker.Miner
                     Target = target,
                 };
 
+                // release connection
+                webResponse.Close();
+
                 return work;
             }
+        }
+
+        /// <summary>
+        /// Invokes the 'getwork' JSON method and parses the result into a new <see cref="T:Work"/> instance.
+        /// </summary>
+        /// <returns></returns>
+        private Work GetWorkRpc(IMiner miner, string comment)
+        {
+            var req = OpenRpc(miner, comment);
+
+            // submit method invocation
+            using (var txt = new StreamWriter(req.GetRequestStream()))
+            using (var wrt = new JsonTextWriter(txt))
+            {
+                wrt.WriteStartObject();
+                wrt.WriteMember("id");
+                wrt.WriteString("json");
+                wrt.WriteMember("method");
+                wrt.WriteString("getwork");
+                wrt.WriteMember("params");
+                wrt.WriteStartArray();
+                wrt.WriteEndArray();
+                wrt.WriteEndObject();
+                wrt.Flush();
+            }
+
+            return ParseGetWork(req.GetResponse());
+        }
+
+        /// <summary>
+        /// Initiates a long-poll request for work.
+        /// </summary>
+        /// <param name="miner"></param>
+        /// <param name="comment"></param>
+        /// <returns></returns>
+        private Work GetWorkLp(IMiner miner, string comment)
+        {
+            var req = OpenLp(miner, comment);
+            var asy = req.BeginGetResponse(null, null);
+
+            // wait until we're told to shutdown, or we run out of time
+            var elapsed = 0;
+            while (run && elapsed < TimeSpan.FromSeconds(60).TotalMilliseconds)
+            {
+                asy.AsyncWaitHandle.WaitOne(1000);
+                elapsed += 1000;
+            }
+
+            if (!asy.IsCompleted)
+            {
+                // if it never completed, abort it
+                req.Abort();
+                return null;
+            }
+            else
+                // otherwise parse the result
+                return ParseGetWork(req.EndGetResponse(asy));
         }
 
         /// <summary>
@@ -519,9 +597,9 @@ namespace BitMaker.Miner
         /// </summary>
         /// <param name="work"></param>
         /// <returns></returns>
-        private static unsafe bool SubmitWorkImpl(IMiner miner, Work work, string comment)
+        private unsafe bool SubmitWorkRpc(IMiner miner, Work work, string comment)
         {
-            var req = RpcOpen(miner, comment);
+            var req = OpenRpc(miner, comment);
 
             // header needs to have SHA-256 padding appended
             var data = Sha256.AllocateInputBuffer(80);
