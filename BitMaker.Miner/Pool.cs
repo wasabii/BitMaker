@@ -13,7 +13,10 @@ using BitMaker.Utils;
 namespace BitMaker.Miner
 {
 
-    public class Pool : IDisposable
+    /// <summary>
+    /// Encapsulates access to a mining pool.
+    /// </summary>
+    public sealed class Pool : IDisposable
     {
 
         /// <summary>
@@ -85,6 +88,14 @@ namespace BitMaker.Miner
             }
         }
 
+        /// <summary>
+        /// Opens a web request.
+        /// </summary>
+        /// <param name="url"></param>
+        /// <param name="method"></param>
+        /// <param name="miner"></param>
+        /// <param name="comment"></param>
+        /// <returns></returns>
         private HttpWebRequest Open(Uri url, string method, IMiner miner, string comment)
         {
             // extract user information from url
@@ -189,6 +200,7 @@ namespace BitMaker.Miner
                 // generate new work instance
                 var work = new Work()
                 {
+                    Pool = this,
                     BlockNumber = blockNumber,
                     Header = header,
                     Target = target,
@@ -207,9 +219,6 @@ namespace BitMaker.Miner
         /// <returns></returns>
         public Work GetWorkRpc(IMiner miner, string comment)
         {
-            if (!run)
-                throw new ObjectDisposedException("Pool");
-
             var req = OpenRpc(miner, comment);
 
             // submit method invocation
@@ -269,9 +278,6 @@ namespace BitMaker.Miner
         /// <returns></returns>
         public bool SubmitWorkRpc(IMiner miner, Work work, string comment)
         {
-            if (!run)
-                throw new ObjectDisposedException("Pool");
-
             var req = OpenRpc(miner, comment);
 
             // header needs to have SHA-256 padding appended

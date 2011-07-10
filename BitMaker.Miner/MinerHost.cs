@@ -332,7 +332,7 @@ namespace BitMaker.Miner
             if (!work.Validate())
                 Console.WriteLine("INVALID : {0,10} {1}", miner.GetType().Name, Memory.Encode(work.Header));
 
-            return Retry(() => pool.SubmitWorkRpc(miner, work, comment), TimeSpan.FromSeconds(5));
+            return Retry(() => work.Pool.SubmitWorkRpc(miner, work, comment), TimeSpan.FromSeconds(5));
         }
 
         /// <summary>

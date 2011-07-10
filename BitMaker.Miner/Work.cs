@@ -11,6 +11,11 @@ namespace BitMaker.Miner
     {
 
         /// <summary>
+        /// Reference to the <see cref="T:Pool"/> that delivered this work.
+        /// </summary>
+        public Pool Pool { get; set; }
+
+        /// <summary>
         /// Current block number when this work was delivered.
         /// </summary>
         public uint BlockNumber { get; set; }
@@ -37,7 +42,7 @@ namespace BitMaker.Miner
             byte[] round2Blocks = Sha256.AllocateInputBuffer(Sha256.SHA256_HASH_SIZE);
             uint[] round2State = Sha256.AllocateStateBuffer();
             byte[] hash = Sha256.AllocateHashBuffer();
-            
+
             fixed (byte* round1BlocksPtr = round1Blocks, round2BlocksPtr = round2Blocks, hashPtr = hash, targetPtr = Target)
             fixed (uint* round1StatePtr = round1State, round2StatePtr = round2State)
             {
@@ -70,7 +75,6 @@ namespace BitMaker.Miner
                 return true;
             }
         }
-
 
     }
 
