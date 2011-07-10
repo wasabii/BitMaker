@@ -483,8 +483,16 @@ namespace BitMaker.Miner
             if (webResponse.Headers["X-Blocknum"] != null)
                 CurrentBlockNumber = blockNumber = uint.Parse(webResponse.Headers["X-Blocknum"]);
 
-            if (webResponse.Headers["X-Long-Polling"] != null)
-                refreshLongPollUrl = new Uri(GetRpcUri(), webResponse.Headers["X-Long-Polling"]);
+            // parse and update long poll url value if present
+            var longPollUrlStr = webResponse.Headers["X-Long-Polling"];
+            if (longPollUrlStr == null)
+                refreshLongPollUrl = null;
+            else if (longPollUrlStr == "")
+                refreshLongPollUrl = GetRpcUri();
+            else if (longPollUrlStr.StartsWith("http:") || longPollUrlStr.StartsWith("https:"))
+                refreshLongPollUrl = new Uri(longPollUrlStr);
+            else
+                refreshLongPollUrl = new Uri(GetRpcUri(), longPollUrlStr);
 
             // retrieve invocation response
             using (var txt = new StreamReader(webResponse.GetResponseStream()))
