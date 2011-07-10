@@ -81,9 +81,9 @@ namespace BitMaker.Miner
                     else
                         GetWorkLp(null, null);
                 }
-                catch (WebException)
+                catch (Exception)
                 {
-                    // ignore
+                    Thread.Sleep(5000);
                 }
             }
         }
@@ -98,6 +98,10 @@ namespace BitMaker.Miner
         /// <returns></returns>
         private HttpWebRequest Open(Uri url, string method, IMiner miner, string comment)
         {
+            // method requires an absolute url to function
+            if (!url.IsAbsoluteUri)
+                return null;
+
             // extract user information from url
             var user = url.UserInfo.Split(':').Select(i => HttpUtility.UrlDecode(i)).ToArray();
 
@@ -220,6 +224,8 @@ namespace BitMaker.Miner
         public Work GetWorkRpc(IMiner miner, string comment)
         {
             var req = OpenRpc(miner, comment);
+            if (req == null)
+                return null;
 
             // submit method invocation
             using (var txt = new StreamWriter(req.GetRequestStream()))
@@ -249,6 +255,9 @@ namespace BitMaker.Miner
         private Work GetWorkLp(IMiner miner, string comment)
         {
             var req = OpenLp(miner, comment);
+            if (req == null)
+                return null;
+
             var asy = req.BeginGetResponse(null, null);
 
             // wait until we're told to shutdown, or we run out of time
@@ -279,6 +288,8 @@ namespace BitMaker.Miner
         public bool SubmitWorkRpc(IMiner miner, Work work, string comment)
         {
             var req = OpenRpc(miner, comment);
+            if (req == null)
+                return false;
 
             // header needs to have SHA-256 padding appended
             var data = Sha256.AllocateInputBuffer(80);

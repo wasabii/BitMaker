@@ -28,11 +28,6 @@
         /// <param name="count">number of hashes to report</param>
         void ReportHashes(IMiner plugin, uint count);
 
-        /// <summary>
-        /// Gets the current block number. When this is changed any outstanding work is invalid.
-        /// </summary>
-        uint CurrentBlockNumber { get; }
-
     }
 
 }

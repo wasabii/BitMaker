@@ -42,7 +42,7 @@ namespace BitMaker.Miner.Managed
                 Context.ReportHashes(this, i);
 
                 // abort if we are working on stale work, or if instructed to
-                return Context.CurrentBlockNumber == work.BlockNumber && !CancellationToken.IsCancellationRequested;
+                return work.Pool.CurrentBlockNumber == work.BlockNumber && !CancellationToken.IsCancellationRequested;
             });
 
             // starting nonce

@@ -35,9 +35,9 @@ namespace BitMaker.Miner
         private bool running;
 
         /// <summary>
-        /// Single pool to retrieve work.
+        /// Available pools to retrieve work from.
         /// </summary>
-        private Pool pool;
+        private List<Pool> pools;
 
         /// <summary>
         /// Milliseconds between recalculation of statistics.
@@ -104,14 +104,6 @@ namespace BitMaker.Miner
         }
 
         /// <summary>
-        /// Gets the current block number.
-        /// </summary>
-        public uint CurrentBlockNumber
-        {
-            get { return pool.CurrentBlockNumber; }
-        }
-
-        /// <summary>
         /// Starts execution of the miners.
         /// </summary>
         public void Start()
@@ -165,8 +157,8 @@ namespace BitMaker.Miner
                     statisticsTimer.Start();
                     statisticsStopWatch = new Stopwatch();
 
-                    // single pool instance for now
-                    pool = new Pool(ConfigurationSection.GetDefaultSection().Url);
+                    // create pools from configuration
+                    pools = ConfigurationSection.GetDefaultSection().Pools.Cast<PoolConfigurationElement>().Select(i => new Pool(i.Url)).ToList();
                 }
 
                 // resources, with the miner factories that can use them
@@ -229,11 +221,12 @@ namespace BitMaker.Miner
                     statisticsStopWatch = null;
                     statisticsHistory = null;
 
-                    // dispose of the pool
-                    if (pool != null)
+                    // dispose of the pools
+                    if (pools != null)
                     {
-                        pool.Dispose();
-                        pool = null;
+                        foreach (var pool in pools)
+                            pool.Dispose();
+                        pools = null;
                     }
 
                     // indicate that we have stopped
@@ -315,10 +308,34 @@ namespace BitMaker.Miner
         /// <returns></returns>
         public Work GetWork(IMiner miner, string comment)
         {
-            return Retry(() =>
+            // continue attempting to get work until we are told to shut down
+            while (run)
             {
-                return pool.GetWorkRpc(miner, comment);
-            }, TimeSpan.FromSeconds(5));
+                // attempt each available pool
+                foreach (var pool in pools)
+                {
+                    // bail out of inner loop
+                    if (!run)
+                        break;
+
+                    try
+                    {
+                        // ask the pool for work, continue if it can't deliver
+                        Work work = pool.GetWorkRpc(miner, comment);
+                        if (work != null)
+                            return work;
+                    }
+                    catch (Exception)
+                    {
+
+                    }
+                }
+
+                // wait for 5 seconds before trying again
+                Thread.Sleep(5000);
+            }
+
+            return null;
         }
 
         /// <summary>
@@ -416,11 +433,6 @@ namespace BitMaker.Miner
 
                 // report to main host, these afterall do count for something
                 host.ReportHashes(plugin, count);
-            }
-
-            public uint CurrentBlockNumber
-            {
-                get { return host.CurrentBlockNumber; }
             }
 
         }

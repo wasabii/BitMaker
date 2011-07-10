@@ -16,14 +16,11 @@ namespace BitMaker.Miner
             return (ConfigurationSection)ConfigurationManager.GetSection("bitmaker.miner") ?? new ConfigurationSection();
         }
 
-        /// <summary>
-        /// Gets or sets the JSON-RPC interface endpoint.
-        /// </summary>
-        [ConfigurationProperty("url")]
-        public Uri Url
+        [ConfigurationProperty("pools", IsDefaultCollection = false)]
+        [ConfigurationCollection(typeof(PoolsConfigurationCollection))]
+        public PoolsConfigurationCollection Pools
         {
-            get { return (Uri)this["url"]; }
-            set { this["url"] = value; }
+            get { return (PoolsConfigurationCollection)this["pools"]; }
         }
 
     }
