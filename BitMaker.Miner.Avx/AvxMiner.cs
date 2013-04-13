@@ -3,10 +3,10 @@
 using BitMaker.Miner.Cpu;
 using BitMaker.Utils.Native;
 
-namespace BitMaker.Miner.Sse
+namespace BitMaker.Miner.Avx
 {
 
-    public class SseMiner : CpuMiner
+    public class AvxMiner : CpuMiner
     {
 
         /// <summary>
@@ -14,7 +14,7 @@ namespace BitMaker.Miner.Sse
         /// </summary>
         /// <param name="context"></param>
         /// <param name="cpu"></param>
-        public SseMiner(IMinerContext context, CpuResource cpu)
+        public AvxMiner(IMinerContext context, CpuResource cpu)
             : base(context, cpu)
         {
 
@@ -32,7 +32,7 @@ namespace BitMaker.Miner.Sse
         public override unsafe uint? Search(Work work, uint* round1State, byte* round1Block2, uint* round2State, byte* round2Block1)
         {
             // invoked periodically to report hashes and check status
-            var check = (SseCheckDelegate)(i =>
+            var check = (CheckDelegate)(i =>
             {
                 // report hashes to context
                 Context.ReportHashes(this, i);

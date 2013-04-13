@@ -86,12 +86,16 @@
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AvxMinerUtils.h" />
+    <ClInclude Include="AvxMinerUtils_cpp.h" />
     <ClInclude Include="SseMinerUtils.h" />
     <ClInclude Include="SseMinerUtils_cpp.h" />
     <ClInclude Include="Stdafx.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AssemblyInfo.cpp" />
+    <ClCompile Include="AvxMinerUtils.cpp" />
+    <ClCompile Include="AvxMinerUtils_cpp.cpp" />
     <ClCompile Include="SseMinerUtils.cpp" />
     <ClCompile Include="SseMinerUtils_cpp.cpp" />
     <ClCompile Include="Stdafx.cpp">
