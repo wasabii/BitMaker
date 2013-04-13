@@ -53,10 +53,6 @@
       <Project>{9231C5BC-33FE-485D-87F6-A72F9A5C919D}</Project>
       <Name>BitMaker.Miner</Name>
     </ProjectReference>
-    <ProjectReference Include="..\BitMaker.Utils.Native\BitMaker.Utils.Native.vcxproj">
-      <Project>{90AA6371-FF81-4F7C-BC63-D993C7873FC2}</Project>
-      <Name>BitMaker.Utils.Native</Name>
-    </ProjectReference>
     <ProjectReference Include="..\BitMaker.Utils\BitMaker.Utils.csproj">
       <Project>{24BBFAE2-CC57-4909-A34B-ED84068EA795}</Project>
       <Name>BitMaker.Utils</Name>
