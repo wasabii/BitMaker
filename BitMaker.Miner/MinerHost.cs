@@ -204,6 +204,8 @@ namespace BitMaker.Miner
                         // multiple miners claim the ability to consume this resource
                         foreach (var factory in resourceSet.Factories)
                         {
+                            Console.Write("Testing Miner: {0}/{1}... ", factory, resourceSet.Resource);
+
                             // sample the hash rate from the proposed miner
                             int hashes = SampleMiner(factory, resourceSet.Resource);
                             if (hashes > topHashCount)
@@ -211,6 +213,9 @@ namespace BitMaker.Miner
                                 topFactory = factory;
                                 topHashCount = hashes;
                             }
+
+                            Console.Write(hashes);
+                            Console.WriteLine();
 
                             // break out prematurely if told to stop
                             if (!run)

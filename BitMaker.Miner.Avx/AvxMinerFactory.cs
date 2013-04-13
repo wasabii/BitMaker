@@ -1,4 +1,8 @@
-﻿using BitMaker.Miner.Cpu;
+﻿using System.Collections.Generic;
+using System.Linq;
+
+using BitMaker.Miner.Cpu;
+using BitMaker.Utils.Native;
 
 namespace BitMaker.Miner.Avx
 {
@@ -9,6 +13,20 @@ namespace BitMaker.Miner.Avx
     [MinerFactory]
     public class AvxMinerFactory : CpuMinerFactory
     {
+
+        /// <summary>
+        /// Gets whether AVX is supported in the current environment.
+        /// </summary>
+        /// <returns></returns>
+        static readonly bool hasAvx = AvxMinerUtils.Detect();
+
+        /// <summary>
+        /// Gets the available resources to be allocated to miners.
+        /// </summary>
+        public override IEnumerable<MinerResource> Resources
+        {
+            get { return hasAvx ? base.Resources : Enumerable.Empty<MinerResource>(); }
+        }
 
         /// <summary>
         /// Starts a new instance of the miner.
