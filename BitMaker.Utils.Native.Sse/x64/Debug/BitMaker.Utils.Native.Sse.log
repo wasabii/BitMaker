@@ -1,0 +1,502 @@
+﻿Build started 4/13/2013 4:27:24 PM.
+     1>Project "C:\Users\wasabi\Development\BitMaker\BitMaker.Utils.Native.Sse\BitMaker.Utils.Native.Sse.vcxproj" on node 4 (Build target(s)).
+     1>ClCompile:
+         C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\x86_amd64\CL.exe /c /AI"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5\\" /AI"C:\Program Files (x86)\Windows Kits\8.0\References\CommonConfiguration\Neutral" /AI"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5\Facades\\" /Zi /clr /nologo /W3 /WX- /Od /D WIN32 /D _DEBUG /D _WINDLL /D _UNICODE /D UNICODE /EHa /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Yc"stdafx.h" /Fp"x64\Debug\BitMaker.Utils.Native.Sse.pch" /Fo"x64\Debug\\" /Fd"x64\Debug\vc110.pdb" /TP /FU"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5\mscorlib.dll" /FU"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5\System.dll" /errorReport:prompt /clr:nostdlib Stdafx.cpp
+         Stdafx.cpp
+         C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\x86_amd64\CL.exe /c /AI"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5\\" /AI"C:\Program Files (x86)\Windows Kits\8.0\References\CommonConfiguration\Neutral" /AI"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5\Facades\\" /Zi /clr /nologo /W3 /WX- /Od /D WIN32 /D _DEBUG /D _WINDLL /D _UNICODE /D UNICODE /EHa /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Yu"stdafx.h" /Fp"x64\Debug\BitMaker.Utils.Native.Sse.pch" /Fo"x64\Debug\\" /Fd"x64\Debug\vc110.pdb" /TP /FU"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5\mscorlib.dll" /FU"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5\System.dll" /errorReport:prompt /clr:nostdlib AssemblyInfo.cpp SseMinerUtils.cpp SseMinerUtils_cpp.cpp
+         AssemblyInfo.cpp
+         SseMinerUtils.cpp
+         SseMinerUtils_cpp.cpp
+     1>SseMinerUtils_cpp.cpp(6): warning C4005: 'UINT32_MAX' : macro redefinition
+                 C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\include\stdint.h(67) : see previous definition of 'UINT32_MAX'
+         Generating Code...
+         C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\x86_amd64\CL.exe /c /Zi /clr /nologo /W3 /WX- /Od /D WIN32 /D _DEBUG /D _WINDLL /D _UNICODE /D UNICODE /EHa /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"x64\Debug\\" /Fd"x64\Debug\vc110.pdb" /TP /errorReport:prompt "C:\Users\wasabi\AppData\Local\Temp\.NETFramework,Version=v4.5.AssemblyAttributes.cpp"
+         .NETFramework,Version=v4.5.AssemblyAttributes.cpp
+       Link:
+         C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\x86_amd64\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Users\wasabi\Development\BitMaker\x64\Debug\BitMaker.Utils.Native.Sse.dll" /VERBOSE /INCREMENTAL /NOLOGO ws2_32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:\Users\wasabi\Development\BitMaker\x64\Debug\BitMaker.Utils.Native.Sse.pdb" /ASSEMBLYDEBUG /TLBID:1 /DYNAMICBASE /FIXED:NO /NXCOMPAT /MACHINE:X64 /DLL x64\Debug\AssemblyInfo.obj
+         x64\Debug\SseMinerUtils.obj
+         x64\Debug\SseMinerUtils_cpp.obj
+         x64\Debug\Stdafx.obj
+         "x64\Debug\.NETFramework,Version=v4.5.AssemblyAttributes.obj"
+         
+         Starting pass 1
+         Processed /DEFAULTLIB:uuid.lib
+         Processed /DEFAULTLIB:MSVCRTD
+         Processed /DEFAULTLIB:OLDNAMES
+         Processed /DEFAULTLIB:MSVCMRTD
+         Processed /DEFAULTLIB:MSCOREE
+         LINK : MSIL module encountered; incremental linking is disabled for MSIL; performing full link
+         
+         Invoking LINK.EXE:
+          /ERRORREPORT:PROMPT @C:\Users\wasabi\AppData\Local\Temp\tmp61b96395363f451eafd19ee81cfdf2f8.rsp
+          /incremental:no
+          /nologo
+          /fullbuild
+         
+         Starting pass 1
+         Processed /DEFAULTLIB:uuid.lib
+         Processed /DEFAULTLIB:MSVCRTD
+         Processed /DEFAULTLIB:OLDNAMES
+         Processed /DEFAULTLIB:MSVCMRTD
+         Processed /DEFAULTLIB:MSCOREE
+         
+         Searching libraries
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\ws2_32.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\kernel32.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\user32.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\gdi32.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\winspool.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\comdlg32.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\advapi32.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\shell32.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\ole32.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\oleaut32.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\uuid.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\odbc32.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\odbccp32.lib:
+             Searching C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\lib\amd64\MSVCRTD.lib:
+               Found __security_check_cookie
+                 Referenced in SseMinerUtils_cpp.obj
+                 Loaded MSVCRTD.lib(amdsecgs.obj)
+               Found __security_cookie
+                 Referenced in SseMinerUtils_cpp.obj
+                 Referenced in MSVCRTD.lib(amdsecgs.obj)
+                 Loaded MSVCRTD.lib(gs_cookie.obj)
+               Found __GSHandlerCheck
+                 Referenced in SseMinerUtils_cpp.obj
+                 Loaded MSVCRTD.lib(gshandler.obj)
+               Found __chkstk
+                 Referenced in SseMinerUtils_cpp.obj
+                 Loaded MSVCRTD.lib(chkstk.obj)
+               Found _DllMainCRTStartup
+                 Loaded MSVCRTD.lib(crtdll.obj)
+               Found __report_gsfailure
+                 Referenced in MSVCRTD.lib(amdsecgs.obj)
+                 Loaded MSVCRTD.lib(gs_report.obj)
+               Found __CppXcptFilter
+                 Referenced in MSVCRTD.lib(crtdll.obj)
+                 Loaded MSVCRTD.lib(MSVCR110D.dll)
+               Found _amsg_exit
+                 Referenced in MSVCRTD.lib(crtdll.obj)
+                 Loaded MSVCRTD.lib(MSVCR110D.dll)
+               Found __imp__malloc_dbg
+                 Referenced in MSVCRTD.lib(crtdll.obj)
+                 Loaded MSVCRTD.lib(MSVCR110D.dll)
+               Found __imp__free_dbg
+                 Referenced in MSVCRTD.lib(crtdll.obj)
+                 Loaded MSVCRTD.lib(MSVCR110D.dll)
+               Found __imp__CrtSetCheckCount
+                 Referenced in MSVCRTD.lib(crtdll.obj)
+                 Loaded MSVCRTD.lib(MSVCR110D.dll)
+               Found _IsNonwritableInCurrentImage
+                 Referenced in MSVCRTD.lib(crtdll.obj)
+                 Loaded MSVCRTD.lib(pesect.obj)
+               Found atexit
+                 Referenced in MSVCRTD.lib(crtdll.obj)
+                 Loaded MSVCRTD.lib(atonexit.obj)
+               Found __security_init_cookie
+                 Referenced in MSVCRTD.lib(crtdll.obj)
+                 Loaded MSVCRTD.lib(gs_support.obj)
+               Found DllMain
+                 Referenced in MSVCRTD.lib(crtdll.obj)
+                 Loaded MSVCRTD.lib(dllmain.obj)
+               Found _RTC_Initialize
+                 Referenced in MSVCRTD.lib(crtdll.obj)
+                 Loaded MSVCRTD.lib(initsect.obj)
+               Found _initterm
+                 Referenced in MSVCRTD.lib(crtdll.obj)
+                 Loaded MSVCRTD.lib(MSVCR110D.dll)
+               Found _initterm_e
+                 Referenced in MSVCRTD.lib(crtdll.obj)
+                 Loaded MSVCRTD.lib(MSVCR110D.dll)
+               Found __clean_type_info_names
+                 Referenced in MSVCRTD.lib(crtdll.obj)
+                 Loaded MSVCRTD.lib(tncleanup.obj)
+               Found __C_specific_handler
+                 Referenced in MSVCRTD.lib(crtdll.obj)
+                 Referenced in MSVCRTD.lib(pesect.obj)
+                 Referenced in MSVCRTD.lib(atonexit.obj)
+                 Loaded MSVCRTD.lib(MSVCR110D.dll)
+               Found __native_startup_state
+                 Referenced in MSVCRTD.lib(crtdll.obj)
+                 Loaded MSVCRTD.lib(natstart.obj)
+               Found __xi_a
+                 Referenced in MSVCRTD.lib(crtdll.obj)
+                 Loaded MSVCRTD.lib(cinitexe.obj)
+         Processed /DEFAULTLIB:kernel32.lib
+          Processed /DISALLOWLIB:libcmt.lib
+          Processed /DISALLOWLIB:libcmtd.lib
+          Processed /DISALLOWLIB:msvcrt.lib
+               Found __crt_debugger_hook
+                 Referenced in MSVCRTD.lib(gs_report.obj)
+                 Loaded MSVCRTD.lib(MSVCR110D.dll)
+               Found __crtUnhandledException
+                 Referenced in MSVCRTD.lib(gs_report.obj)
+                 Loaded MSVCRTD.lib(MSVCR110D.dll)
+               Found __crtTerminateProcess
+                 Referenced in MSVCRTD.lib(gs_report.obj)
+                 Loaded MSVCRTD.lib(MSVCR110D.dll)
+               Found __crtCaptureCurrentContext
+                 Referenced in MSVCRTD.lib(gs_report.obj)
+                 Loaded MSVCRTD.lib(MSVCR110D.dll)
+               Found __crtCapturePreviousContext
+                 Referenced in MSVCRTD.lib(gs_report.obj)
+                 Loaded MSVCRTD.lib(MSVCR110D.dll)
+               Found __IMPORT_DESCRIPTOR_MSVCR110D
+                 Referenced in MSVCRTD.lib(MSVCR110D.dll)
+                 Referenced in MSVCRTD.lib(MSVCR110D.dll)
+                 Referenced in MSVCRTD.lib(MSVCR110D.dll)
+                 Referenced in MSVCRTD.lib(MSVCR110D.dll)
+                 Referenced in MSVCRTD.lib(MSVCR110D.dll)
+                 Referenced in MSVCRTD.lib(MSVCR110D.dll)
+                 Referenced in MSVCRTD.lib(MSVCR110D.dll)
+                 Referenced in MSVCRTD.lib(MSVCR110D.dll)
+                 Referenced in MSVCRTD.lib(MSVCR110D.dll)
+                 Referenced in MSVCRTD.lib(MSVCR110D.dll)
+                 Referenced in MSVCRTD.lib(MSVCR110D.dll)
+                 Referenced in MSVCRTD.lib(MSVCR110D.dll)
+                 Referenced in MSVCRTD.lib(MSVCR110D.dll)
+                 Loaded MSVCRTD.lib(MSVCR110D.dll)
+               Found _lock
+                 Referenced in MSVCRTD.lib(atonexit.obj)
+                 Loaded MSVCRTD.lib(MSVCR110D.dll)
+               Found _unlock
+                 Referenced in MSVCRTD.lib(atonexit.obj)
+                 Loaded MSVCRTD.lib(MSVCR110D.dll)
+               Found __imp__CrtDbgReportW
+                 Referenced in MSVCRTD.lib(atonexit.obj)
+                 Loaded MSVCRTD.lib(MSVCR110D.dll)
+               Found __imp__calloc_dbg
+                 Referenced in MSVCRTD.lib(atonexit.obj)
+                 Loaded MSVCRTD.lib(MSVCR110D.dll)
+               Found __dllonexit
+                 Referenced in MSVCRTD.lib(atonexit.obj)
+                 Loaded MSVCRTD.lib(MSVCR110D.dll)
+               Found __imp__onexit
+                 Referenced in MSVCRTD.lib(atonexit.obj)
+                 Loaded MSVCRTD.lib(MSVCR110D.dll)
+               Found __clean_type_info_names_internal
+                 Referenced in MSVCRTD.lib(tncleanup.obj)
+                 Loaded MSVCRTD.lib(MSVCR110D.dll)
+               Found __NULL_IMPORT_DESCRIPTOR
+                 Referenced in MSVCRTD.lib(MSVCR110D.dll)
+                 Loaded MSVCRTD.lib(MSVCR110D.dll)
+               Found MSVCR110D_NULL_THUNK_DATA
+                 Referenced in MSVCRTD.lib(MSVCR110D.dll)
+                 Loaded MSVCRTD.lib(MSVCR110D.dll)
+             Searching C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\lib\amd64\OLDNAMES.lib:
+             Searching C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\lib\amd64\MSVCMRTD.lib:
+               Found "?.cctor@@$$FYMXXZ" (?.cctor@@$$FYMXXZ)
+                 Referenced in SseMinerUtils_cpp.obj
+                 Referenced in SseMinerUtils_cpp.obj
+                 Referenced in Stdafx.obj
+                 Referenced in .NETFramework,Version=v4.5.AssemblyAttributes.obj
+                 Referenced in AssemblyInfo.obj
+                 Referenced in AssemblyInfo.obj
+                 Referenced in SseMinerUtils.obj
+                 Referenced in SseMinerUtils.obj
+                 Loaded MSVCMRTD.lib(mstartup.obj)
+               Found "extern "C" void __clrcall _app_exit_callback(void)" (?_app_exit_callback@@$$J0YMXXZ)
+                 Referenced in MSVCMRTD.lib(mstartup.obj)
+                 Loaded MSVCMRTD.lib(msilexit.obj)
+               Found "void __clrcall _initterm_m(void const * (__clrcall*const *)(void),void const * (__clrcall*const *)(void))" (?_initterm_m@@$$FYMXPEBQ6MPEBXXZ0@Z)
+                 Referenced in MSVCMRTD.lib(mstartup.obj)
+                 Loaded MSVCMRTD.lib(puremsilcode.obj)
+               Found "extern "C" void __clrcall ___CxxCallUnwindDtor(void (__clrcall*)(void *),void *)" (?___CxxCallUnwindDtor@@$$J0YMXP6MXPEAX@Z0@Z)
+                 Referenced in MSVCMRTD.lib(mstartup.obj)
+                 Loaded MSVCMRTD.lib(managdeh.obj)
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\MSCOREE.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\ws2_32.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\kernel32.lib:
+               Found __imp_EncodePointer
+                 Referenced in MSVCRTD.lib(crtdll.obj)
+                 Referenced in MSVCRTD.lib(atonexit.obj)
+                 Loaded kernel32.lib(KERNEL32.dll)
+               Found __imp_DecodePointer
+                 Referenced in MSVCRTD.lib(crtdll.obj)
+                 Referenced in MSVCRTD.lib(atonexit.obj)
+                 Loaded kernel32.lib(KERNEL32.dll)
+               Found __imp_IsDebuggerPresent
+                 Referenced in MSVCRTD.lib(gs_report.obj)
+                 Loaded kernel32.lib(KERNEL32.dll)
+               Found IsProcessorFeaturePresent
+                 Referenced in MSVCRTD.lib(gs_report.obj)
+                 Loaded kernel32.lib(KERNEL32.dll)
+               Found __imp_QueryPerformanceCounter
+                 Referenced in MSVCRTD.lib(gs_support.obj)
+                 Loaded kernel32.lib(KERNEL32.dll)
+               Found __imp_GetCurrentProcessId
+                 Referenced in MSVCRTD.lib(gs_support.obj)
+                 Loaded kernel32.lib(KERNEL32.dll)
+               Found __imp_GetCurrentThreadId
+                 Referenced in MSVCRTD.lib(gs_support.obj)
+                 Loaded kernel32.lib(KERNEL32.dll)
+               Found __imp_GetSystemTimeAsFileTime
+                 Referenced in MSVCRTD.lib(gs_support.obj)
+                 Loaded kernel32.lib(KERNEL32.dll)
+               Found __imp_DisableThreadLibraryCalls
+                 Referenced in MSVCRTD.lib(dllmain.obj)
+                 Loaded kernel32.lib(KERNEL32.dll)
+               Found __IMPORT_DESCRIPTOR_KERNEL32
+                 Referenced in kernel32.lib(KERNEL32.dll)
+                 Referenced in kernel32.lib(KERNEL32.dll)
+                 Referenced in kernel32.lib(KERNEL32.dll)
+                 Referenced in kernel32.lib(KERNEL32.dll)
+                 Referenced in kernel32.lib(KERNEL32.dll)
+                 Referenced in kernel32.lib(KERNEL32.dll)
+                 Referenced in kernel32.lib(KERNEL32.dll)
+                 Referenced in kernel32.lib(KERNEL32.dll)
+                 Referenced in kernel32.lib(KERNEL32.dll)
+                 Loaded kernel32.lib(KERNEL32.dll)
+               Found KERNEL32_NULL_THUNK_DATA
+                 Referenced in kernel32.lib(KERNEL32.dll)
+                 Loaded kernel32.lib(KERNEL32.dll)
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\user32.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\gdi32.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\winspool.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\comdlg32.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\advapi32.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\shell32.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\ole32.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\oleaut32.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\uuid.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\odbc32.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\odbccp32.lib:
+             Searching C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\lib\amd64\MSVCRTD.lib:
+             Searching C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\lib\amd64\OLDNAMES.lib:
+             Searching C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\lib\amd64\MSVCMRTD.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\MSCOREE.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\ws2_32.lib:
+         
+         Finished searching libraries
+         
+         Finished pass 1
+         
+         Search transition ?__SseDetect@@$$FYA_NXZ->?__SseDetect@@YA_NXZ
+         Search transition ?__SseSearch@@$$FYA_NPEAIPEAE010P6A_NH@Z@Z->?__SseSearch@@YA_NPEAIPEAE010P6A_NH@Z@Z
+         Search transition _pRawDllMain->__t2m@_pRawDllMain
+         Search transition ?DoNothing@DefaultDomain@<CrtImplementationDetails>@@CAJPEAX@Z->__t2m@?DoNothing@DefaultDomain@<CrtImplementationDetails>@@CAJPEAX@Z
+         Search transition ?_cexit@@$$J0YAXXZ->_cexit
+         Search transition ?_UninitializeDefaultDomain@LanguageSupport@<CrtImplementationDetails>@@CAJPEAX@Z->__t2m@?_UninitializeDefaultDomain@LanguageSupport@<CrtImplementationDetails>@@CAJPEAX@Z
+         Search transition ?__security_init_cookie@@$$J0YAXXZ->__security_init_cookie
+         Search transition ?_amsg_exit@@$$J0YAXH@Z->_amsg_exit
+         Search transition ?_getFiberPtrId@@$$FYAPEAXXZ->?_getFiberPtrId@@YAPEAXXZ
+         Search transition ?Sleep@@$$J0YAXK@Z->Sleep
+         Search transition ?__FrameUnwindFilter@@$$J0YAHPEAU_EXCEPTION_POINTERS@@@Z->__FrameUnwindFilter
+         
+         Searching libraries
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\ws2_32.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\kernel32.lib:
+               Found Sleep
+                 Loaded kernel32.lib(KERNEL32.dll)
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\user32.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\gdi32.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\winspool.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\comdlg32.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\advapi32.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\shell32.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\ole32.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\oleaut32.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\uuid.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\odbc32.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\odbccp32.lib:
+             Searching C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\lib\amd64\MSVCRTD.lib:
+               Found _cexit
+                 Loaded MSVCRTD.lib(MSVCR110D.dll)
+               Found __FrameUnwindFilter
+                 Loaded MSVCRTD.lib(MSVCR110D.dll)
+             Searching C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\lib\amd64\OLDNAMES.lib:
+             Searching C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\lib\amd64\MSVCMRTD.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\MSCOREE.lib:
+         
+         Finished searching libraries
+         Search transition _pRawDllMain->__t2m@_pRawDllMain
+         Merging metadata
+         Finished merging metadata
+         
+         Searching libraries
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\ws2_32.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\kernel32.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\user32.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\gdi32.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\winspool.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\comdlg32.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\advapi32.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\shell32.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\ole32.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\oleaut32.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\uuid.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\odbc32.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\odbccp32.lib:
+             Searching C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\lib\amd64\MSVCRTD.lib:
+             Searching C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\lib\amd64\OLDNAMES.lib:
+             Searching C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\lib\amd64\MSVCMRTD.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\MSCOREE.lib:
+               Found _CorDllMain
+                 Loaded MSCOREE.lib(mscoree.dll)
+               Found __IMPORT_DESCRIPTOR_mscoree
+                 Referenced in MSCOREE.lib(mscoree.dll)
+                 Loaded MSCOREE.lib(mscoree.dll)
+               Found mscoree_NULL_THUNK_DATA
+                 Referenced in MSCOREE.lib(mscoree.dll)
+                 Loaded MSCOREE.lib(mscoree.dll)
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\ws2_32.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\kernel32.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\user32.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\gdi32.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\winspool.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\comdlg32.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\advapi32.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\shell32.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\ole32.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\oleaut32.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\uuid.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\odbc32.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\odbccp32.lib:
+             Searching C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\lib\amd64\MSVCRTD.lib:
+             Searching C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\lib\amd64\OLDNAMES.lib:
+             Searching C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\lib\amd64\MSVCMRTD.lib:
+         
+         Finished searching libraries
+         Generating clr ijw/native image
+         
+         Searching libraries
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\ws2_32.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\kernel32.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\user32.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\gdi32.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\winspool.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\comdlg32.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\advapi32.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\shell32.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\ole32.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\oleaut32.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\uuid.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\odbc32.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\odbccp32.lib:
+             Searching C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\lib\amd64\MSVCRTD.lib:
+               Found _load_config_used
+                 Loaded MSVCRTD.lib(loadcfg.obj)
+             Searching C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\lib\amd64\OLDNAMES.lib:
+             Searching C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\lib\amd64\MSVCMRTD.lib:
+             Searching C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\MSCOREE.lib:
+         
+         Finished searching libraries
+         
+         Invoking rc.exe:
+          /v
+          /x
+          /fo
+          "C:\Users\wasabi\AppData\Local\Temp\lnk{BE4BA0E8-1F7B-4E07-AB53-A20BDDD73275}.tmp"
+          "C:\Users\wasabi\AppData\Local\Temp\lnk{191B8462-EBE0-4537-8607-3B98C2EE11E8}.tmp"
+         Microsoft (R) Windows (R) Resource Compiler Version 6.2.9200.16384
+         
+         Copyright (C) Microsoft Corporation.  All rights reserved.
+         
+         
+         Creating C:\Users\wasabi\AppData\Local\Temp\lnk{BE4BA0E8-1F7B-4E07-AB53-A20BDDD73275}.tmp
+         
+         Using codepage 1252 as default
+         
+         C:\Users\wasabi\AppData\Local\Temp\lnk{191B8462-EBE0-4537-8607-3B98C2EE11E8}.tmp.
+         Writing 24:2,	lang:0x409,	size 381
+         
+         Invoking cvtres.exe:
+          /machine:amd64
+          /verbose
+          /out:"C:\Users\wasabi\AppData\Local\Temp\lnk{0306548F-2381-4EFD-8F50-2415A08E96EE}.tmp"
+          /readonly
+          "C:\Users\wasabi\AppData\Local\Temp\lnk{BE4BA0E8-1F7B-4E07-AB53-A20BDDD73275}.tmp"
+         Microsoft (R) Windows Resource To Object Converter Version 11.00.60223.1
+         Copyright (C) Microsoft Corporation.  All rights reserved.
+         
+         adding resource. type:MANIFEST, name:2, language:0x0409, flags:0x30, size:381
+         
+         Unused libraries:
+           C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\ws2_32.lib
+           C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\user32.lib
+           C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\gdi32.lib
+           C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\winspool.lib
+           C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\comdlg32.lib
+           C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\advapi32.lib
+           C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\shell32.lib
+           C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\ole32.lib
+           C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\oleaut32.lib
+           C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\uuid.lib
+           C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\odbc32.lib
+           C:\Program Files (x86)\Windows Kits\8.0\lib\win8\um\x64\odbccp32.lib
+           C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\lib\amd64\OLDNAMES.lib
+         
+         Starting pass 2
+              * linker generated manifest res *
+              .NETFramework,Version=v4.5.AssemblyAttributes.obj
+              Stdafx.obj
+              SseMinerUtils_cpp.obj
+              SseMinerUtils.obj
+              AssemblyInfo.obj
+              kernel32.lib(KERNEL32.dll)
+              kernel32.lib(KERNEL32.dll)
+              kernel32.lib(KERNEL32.dll)
+              kernel32.lib(KERNEL32.dll)
+              kernel32.lib(KERNEL32.dll)
+              kernel32.lib(KERNEL32.dll)
+              kernel32.lib(KERNEL32.dll)
+              kernel32.lib(KERNEL32.dll)
+              kernel32.lib(KERNEL32.dll)
+              kernel32.lib(KERNEL32.dll)
+              kernel32.lib(KERNEL32.dll)
+              kernel32.lib(KERNEL32.dll)
+              MSVCRTD.lib(tncleanup.obj)
+              MSVCRTD.lib(atonexit.obj)
+              MSVCRTD.lib(cinitexe.obj)
+              MSVCRTD.lib(crtdll.obj)
+              MSVCRTD.lib(dllmain.obj)
+              MSVCRTD.lib(gs_cookie.obj)
+              MSVCRTD.lib(gs_report.obj)
+              MSVCRTD.lib(gs_support.obj)
+              MSVCRTD.lib(natstart.obj)
+              MSVCRTD.lib(pesect.obj)
+              MSVCRTD.lib(amdsecgs.obj)
+              MSVCRTD.lib(loadcfg.obj)
+              MSVCRTD.lib(gshandler.obj)
+              MSVCRTD.lib(chkstk.obj)
+              MSVCRTD.lib(initsect.obj)
+              MSVCRTD.lib(MSVCR110D.dll)
+              MSVCRTD.lib(MSVCR110D.dll)
+              MSVCRTD.lib(MSVCR110D.dll)
+              MSVCRTD.lib(MSVCR110D.dll)
+              MSVCRTD.lib(MSVCR110D.dll)
+              MSVCRTD.lib(MSVCR110D.dll)
+              MSVCRTD.lib(MSVCR110D.dll)
+              MSVCRTD.lib(MSVCR110D.dll)
+              MSVCRTD.lib(MSVCR110D.dll)
+              MSVCRTD.lib(MSVCR110D.dll)
+              MSVCRTD.lib(MSVCR110D.dll)
+              MSVCRTD.lib(MSVCR110D.dll)
+              MSVCRTD.lib(MSVCR110D.dll)
+              MSVCRTD.lib(MSVCR110D.dll)
+              MSVCRTD.lib(MSVCR110D.dll)
+              MSVCRTD.lib(MSVCR110D.dll)
+              MSVCRTD.lib(MSVCR110D.dll)
+              MSVCRTD.lib(MSVCR110D.dll)
+              MSVCRTD.lib(MSVCR110D.dll)
+              MSVCRTD.lib(MSVCR110D.dll)
+              MSVCRTD.lib(MSVCR110D.dll)
+              MSVCRTD.lib(MSVCR110D.dll)
+              MSVCRTD.lib(MSVCR110D.dll)
+              MSVCRTD.lib(MSVCR110D.dll)
+              MSVCRTD.lib(MSVCR110D.dll)
+              MSVCMRTD.lib(msilexit.obj)
+              MSVCMRTD.lib(mstartup.obj)
+              MSVCMRTD.lib(puremsilcode.obj)
+              MSVCMRTD.lib(managdeh.obj)
+              MSCOREE.lib(mscoree.dll)
+              MSCOREE.lib(mscoree.dll)
+              MSCOREE.lib(mscoree.dll)
+         Finished pass 2
+         BitMaker.Utils.Native.Sse.vcxproj -> C:\Users\wasabi\Development\BitMaker\x64\Debug\BitMaker.Utils.Native.Sse.dll
+     1>Done Building Project "C:\Users\wasabi\Development\BitMaker\BitMaker.Utils.Native.Sse\BitMaker.Utils.Native.Sse.vcxproj" (Build target(s)).
+
+Build succeeded.
+
+Time Elapsed 00:00:03.18

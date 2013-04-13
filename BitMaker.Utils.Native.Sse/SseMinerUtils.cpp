@@ -22,6 +22,11 @@ namespace BitMaker
 
             public:
 
+				static bool Detect()
+				{
+					return __SseDetect();
+				}
+
                 static Nullable<unsigned int> Search(unsigned int* round1State, unsigned char* round1Block1, unsigned int* round2State, unsigned char* round2Block1, SseCheckDelegate^ check)
                 {
                     unsigned int nonce;

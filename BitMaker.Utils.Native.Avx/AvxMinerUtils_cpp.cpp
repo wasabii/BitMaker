@@ -259,7 +259,27 @@ static inline void sha256_transform(__m256i *state, __m256i *block, __m256i *dst
     dst[7] = add2(state[7], h);
 }
 
-// unmanaged Search implementation
+#define OSXSAVEFlag (1UL<<27)
+#define AVXFlag     ((1UL<<28)|OSXSAVEFlag)
+#define FMAFlag     ((1UL<<12)|AVXFlag|OSXSAVEFlag)
+#define CLMULFlag   ((1UL<< 1)|AVXFlag|OSXSAVEFlag)
+#define VAESFlag    ((1UL<<25)|AVXFlag|OSXSAVEFlag)
+
+bool __AvxDetect()
+{
+	int info[4];
+	__cpuid(info, 0);
+	int nIds = info[0];
+
+	if (nIds >= 1)
+	{
+		__cpuid(info, 0x00000001);
+		return (info[2] & ((int)1 << 28)) != 0;
+	}
+
+	return false;
+}
+
 bool __AvxSearch(unsigned int *round1State, unsigned char *round1Block2, unsigned __int32 *round2State, unsigned char *round2Block1, unsigned __int32 *nonce_, avxCheckFunc check)
 {
     // starting nonce
