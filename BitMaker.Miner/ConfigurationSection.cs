@@ -13,7 +13,14 @@ namespace BitMaker.Miner
         /// <returns></returns>
         public static ConfigurationSection GetDefaultSection()
         {
-            return (ConfigurationSection)ConfigurationManager.GetSection("bitmaker.miner") ?? new ConfigurationSection();
+            return (ConfigurationSection)ConfigurationManager.GetSection("bitMaker.miner") ?? new ConfigurationSection();
+        }
+        
+        [ConfigurationProperty("miners", IsDefaultCollection = false)]
+        [ConfigurationCollection(typeof(MinerFactorysConfigurationCollection))]
+        public MinerFactorysConfigurationCollection Miners
+        {
+            get { return (MinerFactorysConfigurationCollection)this["miners"]; }
         }
 
         [ConfigurationProperty("pools", IsDefaultCollection = false)]

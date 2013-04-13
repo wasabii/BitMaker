@@ -13,8 +13,8 @@ namespace BitMaker.Miner
         /// <summary>
         /// Gets or sets the JSON-RPC interface endpoint.
         /// </summary>
-        [ConfigurationProperty("url", IsRequired=true)]
-        [CallbackValidator(Type=typeof(PoolConfigurationElement),CallbackMethodName="UrlValidator")]
+        [ConfigurationProperty("url", IsRequired = true)]
+        [CallbackValidator(Type = typeof(PoolConfigurationElement), CallbackMethodName = "UrlValidator")]
         public Uri Url
         {
             get { return (Uri)this["url"]; }
@@ -23,7 +23,7 @@ namespace BitMaker.Miner
 
         public static void UrlValidator(object value)
         {
-            Uri url = (Uri)value;
+            var url = (Uri)value;
             if (!url.IsAbsoluteUri)
                 throw new ArgumentException("Url of pool must be an absolute uri.");
             else if (url.Scheme != "http" && url.Scheme != "https")

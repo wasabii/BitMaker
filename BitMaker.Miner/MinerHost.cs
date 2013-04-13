@@ -91,7 +91,7 @@ namespace BitMaker.Miner
         public MinerHost()
         {
             // import available plugins
-            new CompositionContainer(new DirectoryCatalog(".", "*.dll")).SatisfyImportsOnce(this);
+            new CompositionContainer(new ApplicationCatalog()).SatisfyImportsOnce(this);
 
             // default value
             Miners = new List<MinerEntry>();
@@ -135,6 +135,8 @@ namespace BitMaker.Miner
         /// </summary>
         private void MainThread()
         {
+            var cfg = ConfigurationSection.GetDefaultSection();
+
             while (true)
             {
                 lock (syncRoot)
@@ -158,14 +160,34 @@ namespace BitMaker.Miner
                     statisticsStopWatch = new Stopwatch();
 
                     // create pools from configuration
-                    pools = ConfigurationSection.GetDefaultSection().Pools.Cast<PoolConfigurationElement>().Select(i => new Pool(i.Url)).ToList();
+                    pools = cfg.Pools
+                        .Cast<PoolConfigurationElement>()
+                        .Select(i => new Pool(i.Url))
+                        .ToList();
                 }
 
+                // configured factories
+                var factories = MinerFactories;
+                if (cfg.Miners.Count > 0)
+                    factories = factories
+                        .Where(i => cfg.Miners.Any(j => j.Type.IsInstanceOfType(i)));
+
                 // resources, with the miner factories that can use them
-                var resourceSets = MinerFactories
-                    .SelectMany(i => i.Resources.Select(j => new { Factory = i, Resource = j }))
+                var resourceSets = factories
+                    .SelectMany(i => i.Resources
+                        .Select(j => new 
+                        {
+                            Factory = i,
+                            Resource = j,
+                        }))
                     .GroupBy(i => i.Resource)
-                    .Select(i => new { Resource = i.Key, Factories = i.Select(j => j.Factory).ToList() })
+                    .Select(i => new
+                    {
+                        Resource = i.Key,
+                        Factories = i
+                            .Select(j => j.Factory)
+                            .ToList(),
+                    })
                     .ToList();
 
                 // for each resource, start the appropriate miner

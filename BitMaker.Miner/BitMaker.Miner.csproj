@@ -55,6 +55,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ConfigurationSection.cs" />
+    <Compile Include="MinerFactoryConfigurationElement.cs" />
+    <Compile Include="MinerFactorysConfigurationCollection.cs" />
     <Compile Include="IMiner.cs" />
     <Compile Include="IMinerContext.cs" />
     <Compile Include="IMinerFactory.cs" />
