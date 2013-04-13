@@ -17,6 +17,7 @@ namespace BitMaker.Miner.Cpu
         /// </summary>
         public static readonly IEnumerable<MinerResource> cpuResources =
             Enumerable.Range(0, Environment.ProcessorCount)
+            .Take(1)
             .Select(i => new CpuResource() { Id = "CPU" + i })
             .ToArray();
 

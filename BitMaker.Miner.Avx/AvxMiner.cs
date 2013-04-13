@@ -32,7 +32,7 @@ namespace BitMaker.Miner.Avx
         public override unsafe uint? Search(Work work, uint* round1State, byte* round1Block2, uint* round2State, byte* round2Block1)
         {
             // invoked periodically to report hashes and check status
-            var check = (CheckDelegate)(i =>
+            var check = (AvxCheckDelegate)(i =>
             {
                 // report hashes to context
                 Context.ReportHashes(this, i);
@@ -42,7 +42,7 @@ namespace BitMaker.Miner.Avx
             });
 
             // dispatch work to native implementation
-            return SseMinerUtils.Search(round1State, round1Block2, round2State, round2Block1, check);
+            return AvxMinerUtils.Search(round1State, round1Block2, round2State, round2Block1, check);
         }
 
     }

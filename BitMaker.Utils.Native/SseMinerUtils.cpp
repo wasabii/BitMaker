@@ -28,7 +28,7 @@ namespace BitMaker
                     
                     // create function pointer for 'status', and ensure it doesn't get collected
                     GCHandle checkH = GCHandle::Alloc(check);
-                    checkFunc checkPtr = (checkFunc)(void*)Marshal::GetFunctionPointerForDelegate(check);
+                    sseCheckFunc checkPtr = (sseCheckFunc)(void*)Marshal::GetFunctionPointerForDelegate(check);
 
                     try
                     {

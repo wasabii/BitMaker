@@ -23,7 +23,7 @@
     <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <DebugType>full</DebugType>
-    <PlatformTarget>AnyCPU</PlatformTarget>
+    <PlatformTarget>x64</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisIgnoreBuiltInRuleSets>true</CodeAnalysisIgnoreBuiltInRuleSets>
     <CodeAnalysisIgnoreBuiltInRules>true</CodeAnalysisIgnoreBuiltInRules>
@@ -49,6 +49,10 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\BitMaker.Miner.Avx\BitMaker.Miner.Avx.csproj">
+      <Project>{aa88a443-9897-4e49-a2e6-771f0367da9b}</Project>
+      <Name>BitMaker.Miner.Avx</Name>
+    </ProjectReference>
     <ProjectReference Include="..\BitMaker.Miner.Gpu\BitMaker.Miner.Gpu.csproj">
       <Project>{4276299E-7F12-438C-B963-2F7EAFC30C8F}</Project>
       <Name>BitMaker.Miner.Gpu</Name>

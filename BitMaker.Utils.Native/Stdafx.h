@@ -9,3 +9,4 @@
 #include <WinSock2.h>
 #include <emmintrin.h>
 #include <xmmintrin.h>
+#include <intrin.h>

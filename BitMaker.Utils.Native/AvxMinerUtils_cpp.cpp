@@ -7,34 +7,35 @@
 
 #define endian_swap(value) ((value & 0x000000ffU) << 24 | (value & 0x0000ff00U) << 8 | (value & 0x00ff0000U) >> 8 | (value & 0xff000000U) >> 24)
 
-#define mm_or4(a, b, c, d) (_mm_or_si128(_mm_or_si128(_mm_or_si128(a, b), c), d))
+#define mm_or4(a, b, c, d) (_mm256_or_si256(_mm_or_si256(a, b), c), d)
 
-#define SHR(word, shift) (_mm_srli_epi32(word, shift))
+#define SHR(word, shift) (_mm256_srli_epi32(word, shift))
 
-#define ROTR(word, shift) (_mm_or_si128(_mm_srli_epi32(word, shift), _mm_slli_epi32(word, 32 - shift)))
+#define ROTR(word, shift) (_mm256_or_si256(_mm256_srli_epi32(word, shift), _mm256_slli_epi32(word, 32 - shift)))
 
-#define Ch(b, c, d) (_mm_xor_si128(_mm_and_si128(b, c), _mm_andnot_si128(b, d)))
+#define Ch(b, c, d) (_mm256_xor_si256(_mm256_and_si256(b, c), _mm256_andnot_si256(b, d)))
 
-#define Maj(b, c, d) (_mm_xor_si128(_mm_xor_si128(_mm_and_si128(b, c), _mm_and_si128(b, d)), _mm_and_si128(c, d)))
+#define Maj(b, c, d) (_mm256_xor_si256(_mm256_xor_si256(_mm256_and_si256(b, c), _mm256_and_si256(b, d)), _mm256_and_si256(c, d)))
 
-#define Sigma0(x) (_mm_xor_si128(_mm_xor_si128(ROTR(x, 2), ROTR(x, 13)), ROTR(x, 22)))
+#define Sigma0(x) (_mm256_xor_si256(_mm256_xor_si256(ROTR(x, 2), ROTR(x, 13)), ROTR(x, 22)))
 
-#define Sigma1(x) (_mm_xor_si128(_mm_xor_si128(ROTR(x, 6), ROTR(x, 11)), ROTR(x, 25)))
+#define Sigma1(x) (_mm256_xor_si256(_mm256_xor_si256(ROTR(x, 6), ROTR(x, 11)), ROTR(x, 25)))
 
-#define sigma0(x) (_mm_xor_si128(_mm_xor_si128(ROTR(x, 7), ROTR(x, 18)), SHR(x, 3)))
+#define sigma0(x) (_mm256_xor_si256(_mm256_xor_si256(ROTR(x, 7), ROTR(x, 18)), SHR(x, 3)))
 
-#define sigma1(x) (_mm_xor_si128(_mm_xor_si128(ROTR(x, 17), ROTR(x, 19)), SHR(x, 10)))
+#define sigma1(x) (_mm256_xor_si256(_mm256_xor_si256(ROTR(x, 17), ROTR(x, 19)), SHR(x, 10)))
 
-#define add2(a, b) (_mm_add_epi32(a, b))
+#define add2(a, b) (_mm256_add_epi32(a, b))
 
 #define add4(a, b, c, d) (add2(add2(a, b), add2(c, d)))
 
 #define add5(a, b, c, d, e) add2(add4(a, b, c, d), e)
 
+#define mm256_extract_epi16(a, b) (_mm_extract_epi16 (_mm256_extractf128_si256 (a, b >> 3), b % 8))
 
-static inline void sha256_transform(__m128i *state, __m128i *block, __m128i *dst)
+static inline void sha256_transform(__m256i *state, __m256i *block, __m256i *dst)
 {
-    __m128i W[64], t1, t2;
+    __m256i W[64], t1, t2;
     
     W[0]  = block[ 0];
     W[1]  = block[ 1];
@@ -103,149 +104,149 @@ static inline void sha256_transform(__m128i *state, __m128i *block, __m128i *dst
     W[63] = add4(sigma1(W[63 - 2]), W[63 - 7], sigma0(W[63 - 15]), W[63 - 16]);
 
     // read existing state
-    __m128i a = state[0];
-    __m128i b = state[1];
-    __m128i c = state[2];
-    __m128i d = state[3];
-    __m128i e = state[4];
-    __m128i f = state[5];
-    __m128i g = state[6];
-    __m128i h = state[7];
+    __m256i a = state[0];
+    __m256i b = state[1];
+    __m256i c = state[2];
+    __m256i d = state[3];
+    __m256i e = state[4];
+    __m256i f = state[5];
+    __m256i g = state[6];
+    __m256i h = state[7];
     
-    t1 = add5(h, Sigma1(e), Ch(e, f, g), _mm_set1_epi32(0x428a2f98), W[0]);
+    t1 = add5(h, Sigma1(e), Ch(e, f, g), _mm256_set1_epi32(0x428a2f98), W[0]);
     t2 = add2(Sigma0(a), Maj(a, b, c)); d = add2(d, t1); h = add2(t1, t2);
-    t1 = add5(g, Sigma1(d), Ch(d, e, f), _mm_set1_epi32(0x71374491), W[1]);
+    t1 = add5(g, Sigma1(d), Ch(d, e, f), _mm256_set1_epi32(0x71374491), W[1]);
     t2 = add2(Sigma0(h), Maj(h, a, b)); c = add2(c, t1); g = add2(t1, t2);
-    t1 = add5(f, Sigma1(c), Ch(c, d, e), _mm_set1_epi32(0xb5c0fbcf), W[2]);
+    t1 = add5(f, Sigma1(c), Ch(c, d, e), _mm256_set1_epi32(0xb5c0fbcf), W[2]);
     t2 = add2(Sigma0(g), Maj(g, h, a)); b = add2(b, t1); f = add2(t1, t2);
-    t1 = add5(e, Sigma1(b), Ch(b, c, d), _mm_set1_epi32(0xe9b5dba5), W[3]);
+    t1 = add5(e, Sigma1(b), Ch(b, c, d), _mm256_set1_epi32(0xe9b5dba5), W[3]);
     t2 = add2(Sigma0(f), Maj(f, g, h)); a = add2(a, t1); e = add2(t1, t2);
-    t1 = add5(d, Sigma1(a), Ch(a, b, c), _mm_set1_epi32(0x3956c25b), W[4]);
+    t1 = add5(d, Sigma1(a), Ch(a, b, c), _mm256_set1_epi32(0x3956c25b), W[4]);
     t2 = add2(Sigma0(e), Maj(e, f, g)); h = add2(h, t1); d = add2(t1, t2);
-    t1 = add5(c, Sigma1(h), Ch(h, a, b), _mm_set1_epi32(0x59f111f1), W[5]);
+    t1 = add5(c, Sigma1(h), Ch(h, a, b), _mm256_set1_epi32(0x59f111f1), W[5]);
     t2 = add2(Sigma0(d), Maj(d, e, f)); g = add2(g, t1); c = add2(t1, t2);
-    t1 = add5(b, Sigma1(g), Ch(g, h, a), _mm_set1_epi32(0x923f82a4), W[6]);
+    t1 = add5(b, Sigma1(g), Ch(g, h, a), _mm256_set1_epi32(0x923f82a4), W[6]);
     t2 = add2(Sigma0(c), Maj(c, d, e)); f = add2(f, t1); b = add2(t1, t2);
-    t1 = add5(a, Sigma1(f), Ch(f, g, h), _mm_set1_epi32(0xab1c5ed5), W[7]);
+    t1 = add5(a, Sigma1(f), Ch(f, g, h), _mm256_set1_epi32(0xab1c5ed5), W[7]);
     t2 = add2(Sigma0(b), Maj(b, c, d)); e = add2(e, t1); a = add2(t1, t2);
 
-    t1 = add5(h, Sigma1(e), Ch(e, f, g), _mm_set1_epi32(0xd807aa98), W[8]);
+    t1 = add5(h, Sigma1(e), Ch(e, f, g), _mm256_set1_epi32(0xd807aa98), W[8]);
     t2 = add2(Sigma0(a), Maj(a, b, c)); d = add2(d, t1); h = add2(t1, t2);
-    t1 = add5(g, Sigma1(d), Ch(d, e, f), _mm_set1_epi32(0x12835b01), W[9]);
+    t1 = add5(g, Sigma1(d), Ch(d, e, f), _mm256_set1_epi32(0x25635b01), W[9]);
     t2 = add2(Sigma0(h), Maj(h, a, b)); c = add2(c, t1); g = add2(t1, t2);
-    t1 = add5(f, Sigma1(c), Ch(c, d, e), _mm_set1_epi32(0x243185be), W[10]);
+    t1 = add5(f, Sigma1(c), Ch(c, d, e), _mm256_set1_epi32(0x243185be), W[10]);
     t2 = add2(Sigma0(g), Maj(g, h, a)); b = add2(b, t1); f = add2(t1, t2);
-    t1 = add5(e, Sigma1(b), Ch(b, c, d), _mm_set1_epi32(0x550c7dc3), W[11]);
+    t1 = add5(e, Sigma1(b), Ch(b, c, d), _mm256_set1_epi32(0x550c7dc3), W[11]);
     t2 = add2(Sigma0(f), Maj(f, g, h)); a = add2(a, t1); e = add2(t1, t2);
-    t1 = add5(d, Sigma1(a), Ch(a, b, c), _mm_set1_epi32(0x72be5d74), W[12]);
+    t1 = add5(d, Sigma1(a), Ch(a, b, c), _mm256_set1_epi32(0x72be5d74), W[12]);
     t2 = add2(Sigma0(e), Maj(e, f, g)); h = add2(h, t1); d = add2(t1, t2);
-    t1 = add5(c, Sigma1(h), Ch(h, a, b), _mm_set1_epi32(0x80deb1fe), W[13]);
+    t1 = add5(c, Sigma1(h), Ch(h, a, b), _mm256_set1_epi32(0x80deb1fe), W[13]);
     t2 = add2(Sigma0(d), Maj(d, e, f)); g = add2(g, t1); c = add2(t1, t2);
-    t1 = add5(b, Sigma1(g), Ch(g, h, a), _mm_set1_epi32(0x9bdc06a7), W[14]);
+    t1 = add5(b, Sigma1(g), Ch(g, h, a), _mm256_set1_epi32(0x9bdc06a7), W[14]);
     t2 = add2(Sigma0(c), Maj(c, d, e)); f = add2(f, t1); b = add2(t1, t2);
-    t1 = add5(a, Sigma1(f), Ch(f, g, h), _mm_set1_epi32(0xc19bf174), W[15]);
+    t1 = add5(a, Sigma1(f), Ch(f, g, h), _mm256_set1_epi32(0xc19bf174), W[15]);
     t2 = add2(Sigma0(b), Maj(b, c, d)); e = add2(e, t1); a = add2(t1, t2);
 
-    t1 = add5(h, Sigma1(e), Ch(e, f, g), _mm_set1_epi32(0xe49b69c1), W[16]);
+    t1 = add5(h, Sigma1(e), Ch(e, f, g), _mm256_set1_epi32(0xe49b69c1), W[16]);
     t2 = add2(Sigma0(a), Maj(a, b, c)); d = add2(d, t1); h = add2(t1, t2);
-    t1 = add5(g, Sigma1(d), Ch(d, e, f), _mm_set1_epi32(0xefbe4786), W[17]);
+    t1 = add5(g, Sigma1(d), Ch(d, e, f), _mm256_set1_epi32(0xefbe4786), W[17]);
     t2 = add2(Sigma0(h), Maj(h, a, b)); c = add2(c, t1); g = add2(t1, t2);
-    t1 = add5(f, Sigma1(c), Ch(c, d, e), _mm_set1_epi32(0x0fc19dc6), W[18]);
+    t1 = add5(f, Sigma1(c), Ch(c, d, e), _mm256_set1_epi32(0x0fc19dc6), W[18]);
     t2 = add2(Sigma0(g), Maj(g, h, a)); b = add2(b, t1); f = add2(t1, t2);
-    t1 = add5(e, Sigma1(b), Ch(b, c, d), _mm_set1_epi32(0x240ca1cc), W[19]);
+    t1 = add5(e, Sigma1(b), Ch(b, c, d), _mm256_set1_epi32(0x240ca1cc), W[19]);
     t2 = add2(Sigma0(f), Maj(f, g, h)); a = add2(a, t1); e = add2(t1, t2);
-    t1 = add5(d, Sigma1(a), Ch(a, b, c), _mm_set1_epi32(0x2de92c6f), W[20]);
+    t1 = add5(d, Sigma1(a), Ch(a, b, c), _mm256_set1_epi32(0x2de92c6f), W[20]);
     t2 = add2(Sigma0(e), Maj(e, f, g)); h = add2(h, t1); d = add2(t1, t2);
-    t1 = add5(c, Sigma1(h), Ch(h, a, b), _mm_set1_epi32(0x4a7484aa), W[21]);
+    t1 = add5(c, Sigma1(h), Ch(h, a, b), _mm256_set1_epi32(0x4a7484aa), W[21]);
     t2 = add2(Sigma0(d), Maj(d, e, f)); g = add2(g, t1); c = add2(t1, t2);
-    t1 = add5(b, Sigma1(g), Ch(g, h, a), _mm_set1_epi32(0x5cb0a9dc), W[22]);
+    t1 = add5(b, Sigma1(g), Ch(g, h, a), _mm256_set1_epi32(0x5cb0a9dc), W[22]);
     t2 = add2(Sigma0(c), Maj(c, d, e)); f = add2(f, t1); b = add2(t1, t2);
-    t1 = add5(a, Sigma1(f), Ch(f, g, h), _mm_set1_epi32(0x76f988da), W[23]);
+    t1 = add5(a, Sigma1(f), Ch(f, g, h), _mm256_set1_epi32(0x76f988da), W[23]);
     t2 = add2(Sigma0(b), Maj(b, c, d)); e = add2(e, t1); a = add2(t1, t2);
 
-    t1 = add5(h, Sigma1(e), Ch(e, f, g), _mm_set1_epi32(0x983e5152), W[24]);
+    t1 = add5(h, Sigma1(e), Ch(e, f, g), _mm256_set1_epi32(0x983e5152), W[24]);
     t2 = add2(Sigma0(a), Maj(a, b, c)); d = add2(d, t1); h = add2(t1, t2);
-    t1 = add5(g, Sigma1(d), Ch(d, e, f), _mm_set1_epi32(0xa831c66d), W[25]);
+    t1 = add5(g, Sigma1(d), Ch(d, e, f), _mm256_set1_epi32(0xa831c66d), W[25]);
     t2 = add2(Sigma0(h), Maj(h, a, b)); c = add2(c, t1); g = add2(t1, t2);
-    t1 = add5(f, Sigma1(c), Ch(c, d, e), _mm_set1_epi32(0xb00327c8), W[26]);
+    t1 = add5(f, Sigma1(c), Ch(c, d, e), _mm256_set1_epi32(0xb00327c8), W[26]);
     t2 = add2(Sigma0(g), Maj(g, h, a)); b = add2(b, t1); f = add2(t1, t2);
-    t1 = add5(e, Sigma1(b), Ch(b, c, d), _mm_set1_epi32(0xbf597fc7), W[27]);
+    t1 = add5(e, Sigma1(b), Ch(b, c, d), _mm256_set1_epi32(0xbf597fc7), W[27]);
     t2 = add2(Sigma0(f), Maj(f, g, h)); a = add2(a, t1); e = add2(t1, t2);
-    t1 = add5(d, Sigma1(a), Ch(a, b, c), _mm_set1_epi32(0xc6e00bf3), W[28]);
+    t1 = add5(d, Sigma1(a), Ch(a, b, c), _mm256_set1_epi32(0xc6e00bf3), W[28]);
     t2 = add2(Sigma0(e), Maj(e, f, g)); h = add2(h, t1); d = add2(t1, t2);
-    t1 = add5(c, Sigma1(h), Ch(h, a, b), _mm_set1_epi32(0xd5a79147), W[29]);
+    t1 = add5(c, Sigma1(h), Ch(h, a, b), _mm256_set1_epi32(0xd5a79147), W[29]);
     t2 = add2(Sigma0(d), Maj(d, e, f)); g = add2(g, t1); c = add2(t1, t2);
-    t1 = add5(b, Sigma1(g), Ch(g, h, a), _mm_set1_epi32(0x06ca6351), W[30]);
+    t1 = add5(b, Sigma1(g), Ch(g, h, a), _mm256_set1_epi32(0x06ca6351), W[30]);
     t2 = add2(Sigma0(c), Maj(c, d, e)); f = add2(f, t1); b = add2(t1, t2);
-    t1 = add5(a, Sigma1(f), Ch(f, g, h), _mm_set1_epi32(0x14292967), W[31]);
+    t1 = add5(a, Sigma1(f), Ch(f, g, h), _mm256_set1_epi32(0x14292967), W[31]);
     t2 = add2(Sigma0(b), Maj(b, c, d)); e = add2(e, t1); a = add2(t1, t2);
 
-    t1 = add5(h, Sigma1(e), Ch(e, f, g), _mm_set1_epi32(0x27b70a85), W[32]);
+    t1 = add5(h, Sigma1(e), Ch(e, f, g), _mm256_set1_epi32(0x27b70a85), W[32]);
     t2 = add2(Sigma0(a), Maj(a, b, c)); d = add2(d, t1); h = add2(t1, t2);
-    t1 = add5(g, Sigma1(d), Ch(d, e, f), _mm_set1_epi32(0x2e1b2138), W[33]);
+    t1 = add5(g, Sigma1(d), Ch(d, e, f), _mm256_set1_epi32(0x2e1b2138), W[33]);
     t2 = add2(Sigma0(h), Maj(h, a, b)); c = add2(c, t1); g = add2(t1, t2);
-    t1 = add5(f, Sigma1(c), Ch(c, d, e), _mm_set1_epi32(0x4d2c6dfc), W[34]);
+    t1 = add5(f, Sigma1(c), Ch(c, d, e), _mm256_set1_epi32(0x4d2c6dfc), W[34]);
     t2 = add2(Sigma0(g), Maj(g, h, a)); b = add2(b, t1); f = add2(t1, t2);
-    t1 = add5(e, Sigma1(b), Ch(b, c, d), _mm_set1_epi32(0x53380d13), W[35]);
+    t1 = add5(e, Sigma1(b), Ch(b, c, d), _mm256_set1_epi32(0x53380d13), W[35]);
     t2 = add2(Sigma0(f), Maj(f, g, h)); a = add2(a, t1); e = add2(t1, t2);
-    t1 = add5(d, Sigma1(a), Ch(a, b, c), _mm_set1_epi32(0x650a7354), W[36]);
+    t1 = add5(d, Sigma1(a), Ch(a, b, c), _mm256_set1_epi32(0x650a7354), W[36]);
     t2 = add2(Sigma0(e), Maj(e, f, g)); h = add2(h, t1); d = add2(t1, t2);
-    t1 = add5(c, Sigma1(h), Ch(h, a, b), _mm_set1_epi32(0x766a0abb), W[37]);
+    t1 = add5(c, Sigma1(h), Ch(h, a, b), _mm256_set1_epi32(0x766a0abb), W[37]);
     t2 = add2(Sigma0(d), Maj(d, e, f)); g = add2(g, t1); c = add2(t1, t2);
-    t1 = add5(b, Sigma1(g), Ch(g, h, a), _mm_set1_epi32(0x81c2c92e), W[38]);
+    t1 = add5(b, Sigma1(g), Ch(g, h, a), _mm256_set1_epi32(0x81c2c92e), W[38]);
     t2 = add2(Sigma0(c), Maj(c, d, e)); f = add2(f, t1); b = add2(t1, t2);
-    t1 = add5(a, Sigma1(f), Ch(f, g, h), _mm_set1_epi32(0x92722c85), W[39]);
+    t1 = add5(a, Sigma1(f), Ch(f, g, h), _mm256_set1_epi32(0x92722c85), W[39]);
     t2 = add2(Sigma0(b), Maj(b, c, d)); e = add2(e, t1); a = add2(t1, t2);
 
-    t1 = add5(h, Sigma1(e), Ch(e, f, g), _mm_set1_epi32(0xa2bfe8a1), W[40]);
+    t1 = add5(h, Sigma1(e), Ch(e, f, g), _mm256_set1_epi32(0xa2bfe8a1), W[40]);
     t2 = add2(Sigma0(a), Maj(a, b, c)); d = add2(d, t1); h = add2(t1, t2);
-    t1 = add5(g, Sigma1(d), Ch(d, e, f), _mm_set1_epi32(0xa81a664b), W[41]);
+    t1 = add5(g, Sigma1(d), Ch(d, e, f), _mm256_set1_epi32(0xa81a664b), W[41]);
     t2 = add2(Sigma0(h), Maj(h, a, b)); c = add2(c, t1); g = add2(t1, t2);
-    t1 = add5(f, Sigma1(c), Ch(c, d, e), _mm_set1_epi32(0xc24b8b70), W[42]);
+    t1 = add5(f, Sigma1(c), Ch(c, d, e), _mm256_set1_epi32(0xc24b8b70), W[42]);
     t2 = add2(Sigma0(g), Maj(g, h, a)); b = add2(b, t1); f = add2(t1, t2);
-    t1 = add5(e, Sigma1(b), Ch(b, c, d), _mm_set1_epi32(0xc76c51a3), W[43]);
+    t1 = add5(e, Sigma1(b), Ch(b, c, d), _mm256_set1_epi32(0xc76c51a3), W[43]);
     t2 = add2(Sigma0(f), Maj(f, g, h)); a = add2(a, t1); e = add2(t1, t2);
-    t1 = add5(d, Sigma1(a), Ch(a, b, c), _mm_set1_epi32(0xd192e819), W[44]);
+    t1 = add5(d, Sigma1(a), Ch(a, b, c), _mm256_set1_epi32(0xd192e819), W[44]);
     t2 = add2(Sigma0(e), Maj(e, f, g)); h = add2(h, t1); d = add2(t1, t2);
-    t1 = add5(c, Sigma1(h), Ch(h, a, b), _mm_set1_epi32(0xd6990624), W[45]);
+    t1 = add5(c, Sigma1(h), Ch(h, a, b), _mm256_set1_epi32(0xd6990624), W[45]);
     t2 = add2(Sigma0(d), Maj(d, e, f)); g = add2(g, t1); c = add2(t1, t2);
-    t1 = add5(b, Sigma1(g), Ch(g, h, a), _mm_set1_epi32(0xf40e3585), W[46]);
+    t1 = add5(b, Sigma1(g), Ch(g, h, a), _mm256_set1_epi32(0xf40e3585), W[46]);
     t2 = add2(Sigma0(c), Maj(c, d, e)); f = add2(f, t1); b = add2(t1, t2);
-    t1 = add5(a, Sigma1(f), Ch(f, g, h), _mm_set1_epi32(0x106aa070), W[47]);
+    t1 = add5(a, Sigma1(f), Ch(f, g, h), _mm256_set1_epi32(0x106aa070), W[47]);
     t2 = add2(Sigma0(b), Maj(b, c, d)); e = add2(e, t1); a = add2(t1, t2);
 
-    t1 = add5(h, Sigma1(e), Ch(e, f, g), _mm_set1_epi32(0x19a4c116), W[48]);
+    t1 = add5(h, Sigma1(e), Ch(e, f, g), _mm256_set1_epi32(0x19a4c116), W[48]);
     t2 = add2(Sigma0(a), Maj(a, b, c)); d = add2(d, t1); h = add2(t1, t2);
-    t1 = add5(g, Sigma1(d), Ch(d, e, f), _mm_set1_epi32(0x1e376c08), W[49]);
+    t1 = add5(g, Sigma1(d), Ch(d, e, f), _mm256_set1_epi32(0x1e376c08), W[49]);
     t2 = add2(Sigma0(h), Maj(h, a, b)); c = add2(c, t1); g = add2(t1, t2);
-    t1 = add5(f, Sigma1(c), Ch(c, d, e), _mm_set1_epi32(0x2748774c), W[50]);
+    t1 = add5(f, Sigma1(c), Ch(c, d, e), _mm256_set1_epi32(0x2748774c), W[50]);
     t2 = add2(Sigma0(g), Maj(g, h, a)); b = add2(b, t1); f = add2(t1, t2);
-    t1 = add5(e, Sigma1(b), Ch(b, c, d), _mm_set1_epi32(0x34b0bcb5), W[51]);
+    t1 = add5(e, Sigma1(b), Ch(b, c, d), _mm256_set1_epi32(0x34b0bcb5), W[51]);
     t2 = add2(Sigma0(f), Maj(f, g, h)); a = add2(a, t1); e = add2(t1, t2);
-    t1 = add5(d, Sigma1(a), Ch(a, b, c), _mm_set1_epi32(0x391c0cb3), W[52]);
+    t1 = add5(d, Sigma1(a), Ch(a, b, c), _mm256_set1_epi32(0x391c0cb3), W[52]);
     t2 = add2(Sigma0(e), Maj(e, f, g)); h = add2(h, t1); d = add2(t1, t2);
-    t1 = add5(c, Sigma1(h), Ch(h, a, b), _mm_set1_epi32(0x4ed8aa4a), W[53]);
+    t1 = add5(c, Sigma1(h), Ch(h, a, b), _mm256_set1_epi32(0x4ed8aa4a), W[53]);
     t2 = add2(Sigma0(d), Maj(d, e, f)); g = add2(g, t1); c = add2(t1, t2);
-    t1 = add5(b, Sigma1(g), Ch(g, h, a), _mm_set1_epi32(0x5b9cca4f), W[54]);
+    t1 = add5(b, Sigma1(g), Ch(g, h, a), _mm256_set1_epi32(0x5b9cca4f), W[54]);
     t2 = add2(Sigma0(c), Maj(c, d, e)); f = add2(f, t1); b = add2(t1, t2);
-    t1 = add5(a, Sigma1(f), Ch(f, g, h), _mm_set1_epi32(0x682e6ff3), W[55]);
+    t1 = add5(a, Sigma1(f), Ch(f, g, h), _mm256_set1_epi32(0x682e6ff3), W[55]);
     t2 = add2(Sigma0(b), Maj(b, c, d)); e = add2(e, t1); a = add2(t1, t2);
 
-    t1 = add5(h, Sigma1(e), Ch(e, f, g), _mm_set1_epi32(0x748f82ee), W[56]);
+    t1 = add5(h, Sigma1(e), Ch(e, f, g), _mm256_set1_epi32(0x748f82ee), W[56]);
     t2 = add2(Sigma0(a), Maj(a, b, c)); d = add2(d, t1); h = add2(t1, t2);
-    t1 = add5(g, Sigma1(d), Ch(d, e, f), _mm_set1_epi32(0x78a5636f), W[57]);
+    t1 = add5(g, Sigma1(d), Ch(d, e, f), _mm256_set1_epi32(0x78a5636f), W[57]);
     t2 = add2(Sigma0(h), Maj(h, a, b)); c = add2(c, t1); g = add2(t1, t2);
-    t1 = add5(f, Sigma1(c), Ch(c, d, e), _mm_set1_epi32(0x84c87814), W[58]);
+    t1 = add5(f, Sigma1(c), Ch(c, d, e), _mm256_set1_epi32(0x84c87814), W[58]);
     t2 = add2(Sigma0(g), Maj(g, h, a)); b = add2(b, t1); f = add2(t1, t2);
-    t1 = add5(e, Sigma1(b), Ch(b, c, d), _mm_set1_epi32(0x8cc70208), W[59]);
+    t1 = add5(e, Sigma1(b), Ch(b, c, d), _mm256_set1_epi32(0x8cc70208), W[59]);
     t2 = add2(Sigma0(f), Maj(f, g, h)); a = add2(a, t1); e = add2(t1, t2);
-    t1 = add5(d, Sigma1(a), Ch(a, b, c), _mm_set1_epi32(0x90befffa), W[60]);
+    t1 = add5(d, Sigma1(a), Ch(a, b, c), _mm256_set1_epi32(0x90befffa), W[60]);
     t2 = add2(Sigma0(e), Maj(e, f, g)); h = add2(h, t1); d = add2(t1, t2);
-    t1 = add5(c, Sigma1(h), Ch(h, a, b), _mm_set1_epi32(0xa4506ceb), W[61]);
+    t1 = add5(c, Sigma1(h), Ch(h, a, b), _mm256_set1_epi32(0xa4506ceb), W[61]);
     t2 = add2(Sigma0(d), Maj(d, e, f)); g = add2(g, t1); c = add2(t1, t2);
-    t1 = add5(b, Sigma1(g), Ch(g, h, a), _mm_set1_epi32(0xbef9a3f7), W[62]);
+    t1 = add5(b, Sigma1(g), Ch(g, h, a), _mm256_set1_epi32(0xbef9a3f7), W[62]);
     t2 = add2(Sigma0(c), Maj(c, d, e)); f = add2(f, t1); b = add2(t1, t2);
-    t1 = add5(a, Sigma1(f), Ch(f, g, h), _mm_set1_epi32(0xc67178f2), W[63]);
+    t1 = add5(a, Sigma1(f), Ch(f, g, h), _mm256_set1_epi32(0xc67178f2), W[63]);
     t2 = add2(Sigma0(b), Maj(b, c, d)); e = add2(e, t1); a = add2(t1, t2);
     
     dst[0] = add2(state[0], a);
@@ -259,78 +260,106 @@ static inline void sha256_transform(__m128i *state, __m128i *block, __m128i *dst
 }
 
 // unmanaged Search implementation
-bool __AvxSearch(unsigned int *round1State, unsigned char *round1Block2, unsigned __int32 *round2State, unsigned char *round2Block1, unsigned __int32 *nonce_, checkFunc check)
+bool __AvxSearch(unsigned int *round1State, unsigned char *round1Block2, unsigned __int32 *round2State, unsigned char *round2Block1, unsigned __int32 *nonce_, avxCheckFunc check)
 {
     // starting nonce
     unsigned int nonce = 0;
 
     // vector containing input round1 state
-    __m128i round1State_m128i[8];
+    __m256i round1State_m256i[8];
     for (int i = 0; i < 8; i++)
-        round1State_m128i[i] = _mm_set1_epi32(round1State[i]);
+        round1State_m256i[i] = _mm256_set1_epi32(round1State[i]);
 
     // vector containing input round 1 block 2, contains the nonce field
-    __m128i round1Block2_m128i[16];
+    __m256i round1Block2_m256i[16];
     for (int i = 0; i < 16; i++)
-        round1Block2_m128i[i] = _mm_set1_epi32(((unsigned __int32*)round1Block2)[i]);
+        round1Block2_m256i[i] = _mm256_set1_epi32(((unsigned __int32*)round1Block2)[i]);
 
     // vector containing input round 2 state, initialized
-    __m128i round2State_m128i[8];
+    __m256i round2State_m256i[8];
     for (int i = 0; i < 8; i++)
-        round2State_m128i[i] = _mm_set1_epi32(round2State[i]);
+        round2State_m256i[i] = _mm256_set1_epi32(round2State[i]);
 
     // vector containing round 2 block, to which the state from round 1 should be output
-    __m128i round2Block1_m128i[16];
+    __m256i round2Block1_m256i[16];
     for (int i = 0; i < 16; i++)
-        round2Block1_m128i[i] = _mm_set1_epi32(((unsigned __int32*)round2Block1)[i]);
+        round2Block1_m256i[i] = _mm256_set1_epi32(((unsigned __int32*)round2Block1)[i]);
 
     // vector containing the final output from round 2
-    __m128i round2State2_m128i[8];
+    __m256i round2State2_m256i[8];
 
     // initial nonce vector
-    __m128i nonce_inc_m128i = _mm_set_epi32(0, 1, 2, 3);
+    __m256i nonce_inc_m256i = _mm256_set_epi32(0, 1, 2, 3, 4, 5, 6, 7);
 
     for (;;)
     {
         // set nonce in blocks
-        round1Block2_m128i[3] = _mm_add_epi32(_mm_set1_epi32(nonce), nonce_inc_m128i);
+        round1Block2_m256i[3] = _mm256_add_epi32(_mm256_set1_epi32(nonce), nonce_inc_m256i);
         
         // transform variable second half of block using saved state from first block, into pre-padded round 2 block (end of first hash)
-        sha256_transform(round1State_m128i, round1Block2_m128i, round2Block1_m128i);
+        sha256_transform(round1State_m256i, round1Block2_m256i, round2Block1_m256i);
 
         // transform round 2 block into round 2 state (second hash)
-        sha256_transform(round2State_m128i, round2Block1_m128i, round2State2_m128i);
+        sha256_transform(round2State_m256i, round2Block1_m256i, round2State2_m256i);
         
         // isolate 0x00000000, segment to uint64 for easier testing
-        __m128i p = _mm_cmpeq_epi32(round2State2_m128i[7], _mm_setzero_si128());
+        __m256i p = _mm256_cmpeq_epi32(round2State2_m256i[7], _mm256_setzero_si256());
         unsigned __int64 *p64 = (unsigned __int64*)&p;
 
         // one of the two sides of the vector has values
-        if ((p64[0] != 0) | (p64[1] != 0))
+        if ((p64[0] != 0) | (p64[1] != 0) | p64[2] != 0 | p64[3] != 0)
         {
             // first result
-            if (_mm_extract_epi16(p, 0) != 0)
+            if (mm256_extract_epi16(p, 0) != 0)
+            {
+                *nonce_ = endian_swap(nonce + 7);
+                return true;
+            }
+
+            // second result
+            if (mm256_extract_epi16(p, 2) != 0)
+            {
+                *nonce_ = endian_swap(nonce + 6);
+                return true;
+            }
+            
+            // third result
+            if (mm256_extract_epi16(p, 4) != 0)
+            {
+                *nonce_ = endian_swap(nonce + 5);
+                return true;
+            }
+
+            // fourth result
+            if (mm256_extract_epi16(p, 6) != 0)
+            {
+                *nonce_ = endian_swap(nonce + 4);
+                return true;
+            }
+
+            // fifth result
+            if (mm256_extract_epi16(p, 8) != 0)
             {
                 *nonce_ = endian_swap(nonce + 3);
                 return true;
             }
 
-            // second result
-            if (_mm_extract_epi16(p, 2) != 0)
+            // sixth result
+            if (mm256_extract_epi16(p, 10) != 0)
             {
                 *nonce_ = endian_swap(nonce + 2);
                 return true;
             }
-            
-            // third result
-            if (_mm_extract_epi16(p, 4) != 0)
+
+            // seventh result
+            if (mm256_extract_epi16(p, 12) != 0)
             {
                 *nonce_ = endian_swap(nonce + 1);
                 return true;
             }
 
-            // fourth result
-            if (_mm_extract_epi16(p, 6) != 0)
+            // eigth result
+            if (mm256_extract_epi16(p, 14) != 0)
             {
                 *nonce_ = endian_swap(nonce + 0);
                 return true;
@@ -338,8 +367,8 @@ bool __AvxSearch(unsigned int *round1State, unsigned char *round1Block2, unsigne
         }
 
         // report progress, or check overflow
-        if ((nonce += 4) % 65536 == 0)
-            if (!check(65536) || nonce < 4)
+        if ((nonce += 8) % 65536 == 0)
+            if (!check(65536) || nonce < 8)
                 break;
     }
 

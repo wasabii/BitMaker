@@ -259,7 +259,7 @@ static inline void sha256_transform(__m128i *state, __m128i *block, __m128i *dst
 }
 
 // unmanaged Search implementation
-bool __SseSearch(unsigned int *round1State, unsigned char *round1Block2, unsigned __int32 *round2State, unsigned char *round2Block1, unsigned __int32 *nonce_, checkFunc check)
+bool __SseSearch(unsigned int *round1State, unsigned char *round1Block2, unsigned __int32 *round2State, unsigned char *round2Block1, unsigned __int32 *nonce_, sseCheckFunc check)
 {
     // starting nonce
     unsigned int nonce = 0;

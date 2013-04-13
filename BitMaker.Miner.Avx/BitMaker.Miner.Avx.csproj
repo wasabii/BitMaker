@@ -5,7 +5,7 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>8.0.30703</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{3F33BC4C-6A4B-4B62-BC8E-74EA33257FF2}</ProjectGuid>
+    <ProjectGuid>{AA88A443-9897-4E49-A2E6-771F0367DA9B}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>BitMaker.Miner.Avx</RootNamespace>
