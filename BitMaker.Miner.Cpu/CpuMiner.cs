@@ -1,6 +1,6 @@
 ﻿using System;
+using System.ComponentModel.Composition;
 using System.Threading;
-
 using BitMaker.Utils;
 
 namespace BitMaker.Miner.Cpu
@@ -12,7 +12,7 @@ namespace BitMaker.Miner.Cpu
     public abstract class CpuMiner : IMiner
     {
 
-        private readonly object syncRoot = new object();
+        readonly object syncRoot = new object();
 
         /// <summary>
         /// Context under which work is done.
@@ -22,12 +22,20 @@ namespace BitMaker.Miner.Cpu
         /// <summary>
         /// CPU we are bound to.
         /// </summary>
-        public CpuResource Cpu { get; private set; }
+        public CpuDevice Cpu { get; private set; }
+
+        /// <summary>
+        /// CPU we are bound to.
+        /// </summary>
+        public MinerDevice Device
+        {
+            get { return Cpu; }
+        }
 
         /// <summary>
         /// Signals processes to halt.
         /// </summary>
-        private CancellationTokenSource cts;
+        CancellationTokenSource cts;
 
         /// <summary>
         /// Gets a reference to a token used to signal that processing should halt.
@@ -40,14 +48,14 @@ namespace BitMaker.Miner.Cpu
         /// <summary>
         /// Thread that pulls and processes work.
         /// </summary>
-        private Thread workThread;
+        Thread workThread;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
         /// <param name="cpu"></param>
-        public CpuMiner(IMinerContext context, CpuResource cpu)
+        protected CpuMiner(IMinerContext context, CpuDevice cpu)
         {
             Context = context;
             Cpu = cpu;
@@ -103,7 +111,7 @@ namespace BitMaker.Miner.Cpu
         /// <summary>
         /// Entry point for a standard work thread.
         /// </summary>
-        private void WorkThread()
+        void WorkThread()
         {
             try
             {
@@ -125,7 +133,7 @@ namespace BitMaker.Miner.Cpu
         /// <param name="round1State"></param>
         /// <param name="round2Blocks"></param>
         /// <param name="round2State"></param>
-        private unsafe void PrepareWork(Work work, out byte[] round1Blocks, out uint[] round1State, out byte[] round2Blocks, out uint[] round2State)
+        unsafe void PrepareWork(Work work, out byte[] round1Blocks, out uint[] round1State, out byte[] round2Blocks, out uint[] round2State)
         {
             // allocate buffers to hold hashing work
             round1Blocks = Sha256.AllocateInputBuffer(80);
@@ -158,7 +166,7 @@ namespace BitMaker.Miner.Cpu
         /// Attempts to solve the given work with the specified solver.
         /// </summary>
         /// <param name="work"></param>
-        private unsafe void Work(Work work)
+        unsafe void Work(Work work)
         {
             // allocate buffers to hold hashing work
             byte[] round1Blocks, round2Blocks;

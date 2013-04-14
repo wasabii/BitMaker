@@ -10,17 +10,9 @@ namespace BitMaker.Miner
     {
 
         /// <summary>
-        /// Returns the set of resources that can be consumed by the miner implementation of this factory.
+        /// Gets the set of miners exposed by this factory.
         /// </summary>
-        IEnumerable<MinerResource> Resources { get; }
-
-        /// <summary>
-        /// Starts a new miner that consumes the given resource.
-        /// </summary>
-        /// <param name="context"></param>
-        /// <param name="resource"></param>
-        /// <returns></returns>
-        IMiner StartMiner(IMinerContext context, MinerResource resource);
+        IEnumerable<IMiner> Miners { get; }
 
     }
 

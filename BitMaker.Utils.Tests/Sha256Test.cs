@@ -158,36 +158,9 @@ namespace BitMaker.Utils.Tests
             }
         }
 
-        ///// <summary>
-        ///// Test class to run a solver against.
-        ///// </summary>
-        //private class CpuMinerStatus : ICpuSolverStatus
-        //{
-
-        //    private int hashCount = 0;
-
-        //    /// <summary>
-        //    /// Stops the solver when it's hash count exceeds the solution.
-        //    /// </summary>
-        //    /// <param name="hashes"></param>
-        //    /// <returns></returns>
-        //    public bool Check(uint hashes)
-        //    {
-        //        return (hashCount += (int)hashes) <= 3000;
-        //    }
-        //}
-
         [TestMethod]
         public unsafe void BlockHeaderHashTest()
         {
-            // sample work with immediate solution
-            var work = new Work()
-            {
-                BlockNumber = 0,
-                Header = Memory.Decode("00000001d915b8fd2face61c6fe22ab76cad5f46c11cebab697dbd9e00000804000000008fe5f19cbdd55b40db93be7ef8ae249e0b21ec6e29c833b186404de0de205cc54e0022ac1a132185007d1adf000000800000000000000000000000000000000000000000000000000000000000000000000000000000000080020000"),
-                Target = Memory.Decode("ffffffffffffffffffffffffffffffffffffffffffffffffffffffff00000000"),
-            };
-
             // allocate buffers to hold hashing work
             byte[] round1Blocks = Sha256.AllocateInputBuffer(80);
             uint[] round1State = Sha256.AllocateStateBuffer();
@@ -195,7 +168,7 @@ namespace BitMaker.Utils.Tests
             uint[] round2State = Sha256.AllocateStateBuffer();
             byte[] hash = Sha256.AllocateHashBuffer();
 
-            fixed (byte* round1BlocksPtr = round1Blocks, round2BlocksPtr = round2Blocks, hashPtr = hash, targetPtr = work.Target)
+            fixed (byte* round1BlocksPtr = round1Blocks, round2BlocksPtr = round2Blocks, hashPtr = hash, targetPtr = Utils.Work.Target)
             fixed (uint* round1StatePtr = round1State, round2StatePtr = round2State)
             {
                 byte* round1Block1Ptr = round1BlocksPtr;
@@ -203,7 +176,7 @@ namespace BitMaker.Utils.Tests
                 byte* round2Block1Ptr = round2BlocksPtr;
 
                 // header arrives in big endian, convert to host
-                fixed (byte* workHeaderPtr = work.Header)
+                fixed (byte* workHeaderPtr = Utils.Work.Header)
                     Memory.ReverseEndian((uint*)workHeaderPtr, (uint*)round1BlocksPtr, 20);
 
                 // prepare states and blocks

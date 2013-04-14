@@ -18,7 +18,7 @@ namespace BitMaker.Miner.Managed
         /// </summary>
         /// <param name="context"></param>
         /// <param name="cpu"></param>
-        public ManagedMiner(IMinerContext context, CpuResource cpu)
+        public ManagedMiner(IMinerContext context, CpuDevice cpu)
             : base(context, cpu)
         {
 

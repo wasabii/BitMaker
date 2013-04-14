@@ -1,10 +1,12 @@
 ﻿using System;
-using System.Threading;
+using System.IO;
 using System.Linq;
+using System.Threading;
+
+using Cloo;
 
 using BitMaker.Utils;
-using Cloo;
-using System.IO;
+using System.Text;
 
 namespace BitMaker.Miner.Gpu
 {
@@ -15,7 +17,29 @@ namespace BitMaker.Miner.Gpu
     public sealed class GpuMiner : IMiner
     {
 
-        private readonly object syncRoot = new object();
+        /// <summary>
+        /// Device names that support BFI_INT.
+        /// </summary>
+        static readonly string[] BFI_INT_DEVICES = new string[]
+        {
+			"Cedar",
+            "Redwood",
+            "Juniper",
+            "Cypress",
+            "Hemlock",
+            "Caicos",
+            "Turks",
+            "Barts",
+            "Cayman",
+            "Antilles",
+            "Palm",
+            "Sumo",
+            "Wrestler",
+            "WinterPark",
+            "BeaverCreek",
+	    };
+
+        readonly object syncRoot = new object();
 
         /// <summary>
         /// Context under which work is done.
@@ -25,7 +49,7 @@ namespace BitMaker.Miner.Gpu
         /// <summary>
         /// GPU we are bound to.
         /// </summary>
-        public GpuResource Gpu { get; private set; }
+        public GpuDevice Gpu { get; private set; }
 
         /// <summary>
         /// Signals processes to halt.
@@ -41,24 +65,36 @@ namespace BitMaker.Miner.Gpu
         }
 
         /// <summary>
+        /// Gets the GPU consumed by this miner.
+        /// </summary>
+        public MinerDevice Device
+        {
+            get { return Gpu; }
+        }
+
+        /// <summary>
         /// Thread that pulls and processes work.
         /// </summary>
-        private Thread workThread;
+        Thread workThread;
 
-        private ComputeContext clContext;
-        private ComputeDevice clDevice;
-        private ComputeProgram clProgram;
-        private ComputeCommandQueue clQueue;
-        private ComputeKernel clKernel;
-        private ComputeBuffer<uint> clBuffer0;
-        private ComputeBuffer<uint> clBuffer1;
+        long worksize = 0;
+        bool hasBitAlign = false;
+        bool hasBFI_INT = false;
+
+        ComputeContext clContext;
+        ComputeDevice clDevice;
+        ComputeProgram clProgram;
+        ComputeCommandQueue clQueue;
+        ComputeKernel clKernel;
+        ComputeBuffer<uint> clBuffer0;
+        ComputeBuffer<uint> clBuffer1;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
         /// <param name="gpu"></param>
-        public GpuMiner(IMinerContext context, GpuResource gpu)
+        public GpuMiner(IMinerContext context, GpuDevice gpu)
         {
             Context = context;
             Gpu = gpu;
@@ -114,7 +150,7 @@ namespace BitMaker.Miner.Gpu
         /// <summary>
         /// Entry point for a standard work thread.
         /// </summary>
-        private void WorkThread()
+        void WorkThread()
         {
             InitializeOpenCL();
 
@@ -160,7 +196,7 @@ namespace BitMaker.Miner.Gpu
         /// <param name="round1State"></param>
         /// <param name="round2Blocks"></param>
         /// <param name="round2State"></param>
-        private unsafe void PrepareWork(Work work, out byte[] round1Blocks, out uint[] round1State, out byte[] round2Blocks, out uint[] round2State)
+        unsafe void PrepareWork(Work work, out byte[] round1Blocks, out uint[] round1State, out byte[] round2Blocks, out uint[] round2State)
         {
             // allocate buffers to hold hashing work
             round1Blocks = Sha256.AllocateInputBuffer(80);
@@ -192,7 +228,7 @@ namespace BitMaker.Miner.Gpu
         /// <summary>
         /// Attempts to initialize OpenCL for the selected GPU.
         /// </summary>
-        private void InitializeOpenCL()
+        void InitializeOpenCL()
         {
             // only initialize once
             if (clKernel != null)
@@ -203,8 +239,17 @@ namespace BitMaker.Miner.Gpu
                 .SelectMany(i => i.Devices)
                 .SingleOrDefault(i => i.Handle.Value == Gpu.CLDeviceHandle.Value);
 
+            // configure device information
+            worksize = clDevice.MaxWorkGroupSize;
+            hasBitAlign = clDevice.Extensions.Contains("cl_amd_media_ops");
+            hasBFI_INT = false && hasBitAlign && BFI_INT_DEVICES.Any(i => clDevice.Name.Contains(i));
+
             // context we'll be working underneath
-            clContext = new ComputeContext(new ComputeDevice[] { clDevice }, new ComputeContextPropertyList(clDevice.Platform), null, IntPtr.Zero);
+            clContext = new ComputeContext(
+                new ComputeDevice[] { clDevice },
+                new ComputeContextPropertyList(clDevice.Platform),
+                null,
+                IntPtr.Zero);
 
             // queue to control device
             clQueue = new ComputeCommandQueue(clContext, clDevice, ComputeCommandQueueFlags.None);
@@ -213,17 +258,21 @@ namespace BitMaker.Miner.Gpu
             clBuffer0 = new ComputeBuffer<uint>(clContext, ComputeMemoryFlags.ReadOnly, 16);
             clBuffer1 = new ComputeBuffer<uint>(clContext, ComputeMemoryFlags.ReadOnly, 16);
 
-            // kernel code
-            string kernelCode;
-            using (var rdr = new StreamReader(GetType().Assembly.GetManifestResourceStream("BitMaker.Miner.Gpu.DiabloMiner.cl")))
-                kernelCode = rdr.ReadToEnd();
+            // obtain the program
+            clProgram = new ComputeProgram(clContext, Gpu.GetSource());
 
-            clProgram = new ComputeProgram(clContext, kernelCode);
+            var b = new StringBuilder();
+            if (worksize > 0)
+                b.AppendFormat(" -D WORKSIZE={0}", worksize);
+            if (hasBitAlign)
+                b.Append(" -D BITALIGN");
+            if (hasBFI_INT)
+                b.Append(" -D BFIINT");
 
             try
             {
                 // build kernel for device
-                clProgram.Build(new ComputeDevice[] { clDevice }, "-D WORKSIZE=" + clDevice.MaxWorkGroupSize, null, IntPtr.Zero);
+                clProgram.Build(new[] { clDevice }, b.ToString(), null, IntPtr.Zero);
             }
             catch (ComputeException)
             {
@@ -238,7 +287,7 @@ namespace BitMaker.Miner.Gpu
         /// <paramref name="work"/> is updated to reflect the solution.
         /// </summary>
         /// <param name="work"></param>
-        private unsafe void Work(Work work)
+        unsafe void Work(Work work)
         {
             // invoked periodically to report hashes and check status
             var check = (Func<uint, bool>)(i =>
@@ -257,9 +306,6 @@ namespace BitMaker.Miner.Gpu
             // allocate buffers and create partial hash
             PrepareWork(work, out round1Blocks, out round1State, out round2Blocks, out round2State);
 
-            // static values for work
-            uint W16, W17, W18, W19, W31, W32, PreVal4, T1, PreVal4_plus_state0, PreVal4_plus_T1;
-
             // build message schedule without nonce
             uint* W = stackalloc uint[64];
             fixed (byte* round1BlocksPtr = round1Blocks)
@@ -273,21 +319,26 @@ namespace BitMaker.Miner.Gpu
             Sha256.Round(ref round1State2Pre[0], ref round1State2Pre[1], ref round1State2Pre[2], ref round1State2Pre[3], ref round1State2Pre[4], ref round1State2Pre[5], ref round1State2Pre[6], ref round1State2Pre[7], W, 2);
 
             // precalculated peices that are independent of nonce
-            W16 = W[16];
-            W17 = W[17];
-            W18 = W[18];
-            W19 = W[19];
-            W31 = W[31];
-            W32 = W[32];
-            PreVal4 = round1State[4] + Sha256.Sigma1(round1State2Pre[4]) + Sha256.Ch(round1State2Pre[4], round1State2Pre[5], round1State2Pre[6]) + Sha256.K[3];
-            T1 = Sha256.Sigma0(round1State2Pre[0]) + Sha256.Maj(round1State2Pre[0], round1State2Pre[1], round1State2Pre[2]);
-            PreVal4_plus_state0 = PreVal4 + round1State[0];
-            PreVal4_plus_T1 = PreVal4 + T1;
+            uint W16 = W[16];
+            uint W17 = W[17];
+            uint W18 = W[18];
+            uint W19 = W[19];
+            uint W31 = W[31];
+            uint W32 = W[32];
+            uint PreVal4 = round1State[4] + (Sha256.Rotr(round1State2Pre[1], 6) ^ Sha256.Rotr(round1State2Pre[1], 11) ^ Sha256.Rotr(round1State2Pre[1], 25)) + (round1State2Pre[3] ^ (round1State2Pre[1] & (round1State2Pre[2] ^ round1State2Pre[3]))) + Sha256.K[3];
+            uint T1 = (Sha256.Rotr(round1State2Pre[5], 2) ^ Sha256.Rotr(round1State2Pre[5], 13) ^ Sha256.Rotr(round1State2Pre[5], 22)) + ((round1State2Pre[5] & round1State2Pre[6]) | (round1State2Pre[7] & (round1State2Pre[5] | round1State2Pre[6])));
+            uint PreVal4_state0 = PreVal4 + round1State[0];
+            uint PreVal4_state0_k7 = (uint)(PreVal4_state0 + 0xAB1C5ED5L);
+            uint PreVal4_T1 = PreVal4 + T1;
+            uint B1_plus_K6 = (uint)(round1State2Pre[1] + 0x923f82a4L);
+            uint C1_plus_K5 = (uint)(round1State2Pre[2] + 0x59f111f1L);
+            uint W16_plus_K16 = (uint)(W16 + 0xe49b69c1L);
+            uint W17_plus_K17 = (uint)(W17 + 0xefbe4786L);
 
             // clear output buffers, in case they've already been used
             uint[] outputZero = new uint[16];
             clQueue.WriteToBuffer(outputZero, clBuffer0, true, null);
-            clQueue.WriteToBuffer(outputZero, clBuffer0, true, null);
+            clQueue.WriteToBuffer(outputZero, clBuffer1, true, null);
 
             // to hold output buffer
             uint[] output = new uint[16];
@@ -334,30 +385,34 @@ namespace BitMaker.Miner.Gpu
 
                 // execute kernel with computed values
                 clQueue.Finish();
-                clKernel.SetValueArgument(0, round1State[0]);
-                clKernel.SetValueArgument(1, round1State[1]);
-                clKernel.SetValueArgument(2, round1State[2]);
-                clKernel.SetValueArgument(3, round1State[3]);
-                clKernel.SetValueArgument(4, round1State[4]);
-                clKernel.SetValueArgument(5, round1State[5]);
-                clKernel.SetValueArgument(6, round1State[6]);
-                clKernel.SetValueArgument(7, round1State[7]);
-                clKernel.SetValueArgument(8, round1State2Pre[4]);
-                clKernel.SetValueArgument(9, round1State2Pre[5]);
-                clKernel.SetValueArgument(10, round1State2Pre[6]);
-                clKernel.SetValueArgument(11, round1State2Pre[0]);
+                clKernel.SetValueArgument(0, PreVal4_state0);
+                clKernel.SetValueArgument(1, PreVal4_state0_k7);
+                clKernel.SetValueArgument(2, PreVal4_T1);
+                clKernel.SetValueArgument(3, W18);
+                clKernel.SetValueArgument(4, W19);
+                clKernel.SetValueArgument(5, W16);
+                clKernel.SetValueArgument(6, W17);
+                clKernel.SetValueArgument(7, W16_plus_K16);
+                clKernel.SetValueArgument(8, W17_plus_K17);
+                clKernel.SetValueArgument(9, W31);
+                clKernel.SetValueArgument(10, W32);
+                clKernel.SetValueArgument(11, (uint)(round1State2Pre[3] + 0xB956c25bL));
                 clKernel.SetValueArgument(12, round1State2Pre[1]);
                 clKernel.SetValueArgument(13, round1State2Pre[2]);
-                clKernel.SetValueArgument(14, nonce);
-                clKernel.SetValueArgument(15, W16);
-                clKernel.SetValueArgument(16, W17);
-                clKernel.SetValueArgument(17, W18);
-                clKernel.SetValueArgument(18, W19);
-                clKernel.SetValueArgument(19, W31);
-                clKernel.SetValueArgument(20, W32);
-                clKernel.SetValueArgument(21, PreVal4_plus_state0);
-                clKernel.SetValueArgument(22, PreVal4_plus_T1);
-                clKernel.SetMemoryArgument(23, outputAlt ? clBuffer0 : clBuffer1);
+                clKernel.SetValueArgument(14, round1State2Pre[7]);
+                clKernel.SetValueArgument(15, round1State2Pre[5]);
+                clKernel.SetValueArgument(16, round1State2Pre[6]);
+                clKernel.SetValueArgument(17, C1_plus_K5);
+                clKernel.SetValueArgument(18, B1_plus_K6);
+                clKernel.SetValueArgument(19, round1State[0]);
+                clKernel.SetValueArgument(20, round1State[1]);
+                clKernel.SetValueArgument(21, round1State[2]);
+                clKernel.SetValueArgument(22, round1State[3]);
+                clKernel.SetValueArgument(23, round1State[4]);
+                clKernel.SetValueArgument(24, round1State[5]);
+                clKernel.SetValueArgument(25, round1State[6]);
+                clKernel.SetValueArgument(26, round1State[7]);
+                clKernel.SetMemoryArgument(27, outputAlt ? clBuffer0 : clBuffer1);
                 clQueue.Execute(clKernel, null, new long[] { globalWorkSize }, new long[] { localWorkSize }, events);
 
                 // dispose of all events floating around in the list

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.Composition;
 using System.Linq;
 
 namespace BitMaker.Miner.Gpu
@@ -16,7 +17,7 @@ namespace BitMaker.Miner.Gpu
         /// <summary>
         /// All available GPUs in the system.
         /// </summary>
-        static readonly IEnumerable<MinerResource> gpuResources;
+        static readonly IEnumerable<GpuDevice> gpus;
 
         /// <summary>
         /// Initializes the static instance.
@@ -25,9 +26,9 @@ namespace BitMaker.Miner.Gpu
         {
             try
             {
-                gpuResources = global::Cloo.ComputePlatform.Platforms
+                gpus = global::Cloo.ComputePlatform.Platforms
                     .SelectMany(i => i.Devices)
-                    .Select(i => new GpuResource()
+                    .Select(i => new GpuDevice()
                     {
                         Id = i.Name,
                         CLDeviceHandle = i.Handle,
@@ -41,25 +42,35 @@ namespace BitMaker.Miner.Gpu
         }
 
         /// <summary>
-        /// <see cref="T:GpuMiner"/> can consume all of the available OpenCL GPUs in the system.
+        /// All miners exposed by this factory.
         /// </summary>
-        public IEnumerable<MinerResource> Resources
+        IEnumerable<GpuMiner> miners;
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        [ImportingConstructor]
+        public GpuMinerFactory([Import] IMinerContext context)
         {
-            get { return gpuResources ?? Enumerable.Empty<MinerResource>(); }
+            miners = gpus
+                .Select(i => new GpuMiner(context, i))
+                .ToList();
         }
 
         /// <summary>
-        /// Invoked by the host to begin a new miner.
+        /// Gets the GPU resources available.
         /// </summary>
-        /// <param name="context"></param>
-        /// <param name="resource"></param>
-        /// <returns></returns>
-        public IMiner StartMiner(IMinerContext context, MinerResource resource)
+        public IEnumerable<MinerDevice> Devices
         {
-            var miner = new GpuMiner(context, (GpuResource)resource);
-            miner.Start();
+            get { return gpus ?? Enumerable.Empty<MinerDevice>(); }
+        }
 
-            return miner;
+        /// <summary>
+        /// Gets the GPU miners available.
+        /// </summary>
+        public IEnumerable<IMiner> Miners
+        {
+            get { return miners; }
         }
 
     }

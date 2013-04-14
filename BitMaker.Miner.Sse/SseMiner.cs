@@ -14,7 +14,7 @@ namespace BitMaker.Miner.Sse
         /// </summary>
         /// <param name="context"></param>
         /// <param name="cpu"></param>
-        public SseMiner(IMinerContext context, CpuResource cpu)
+        public SseMiner(IMinerContext context, CpuDevice cpu)
             : base(context, cpu)
         {
 

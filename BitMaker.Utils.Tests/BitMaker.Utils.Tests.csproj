@@ -53,6 +53,7 @@
     <Compile Include="MemoryTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Sha256Test.cs" />
+    <Compile Include="Utils.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\BitMaker.Miner.Cpu\BitMaker.Miner.Cpu.csproj">

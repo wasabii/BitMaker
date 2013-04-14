@@ -1,4 +1,8 @@
-﻿using BitMaker.Miner.Cpu;
+﻿using System.Collections.Generic;
+using System.ComponentModel.Composition;
+using System.Linq;
+
+using BitMaker.Miner.Cpu;
 
 namespace BitMaker.Miner.Managed
 {
@@ -10,18 +14,23 @@ namespace BitMaker.Miner.Managed
     public class ManagedMinerFactory : CpuMinerFactory
     {
 
+        readonly IEnumerable<ManagedMiner> miners;
+
         /// <summary>
-        /// Starts a new instance of the miner.
+        /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
-        /// <param name="resource"></param>
-        /// <returns></returns>
-        public override IMiner StartMiner(IMinerContext context, CpuResource resource)
+        [ImportingConstructor]
+        public ManagedMinerFactory([Import] IMinerContext context)
         {
-            var miner = new ManagedMiner(context, (CpuResource)resource);
-            miner.Start();
+            miners = Cpus
+                .Select(i => new ManagedMiner(context, i))
+                .ToList();
+        }
 
-            return miner;
+        public override IEnumerable<IMiner> Miners
+        {
+            get { return miners; }
         }
 
     }

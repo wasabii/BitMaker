@@ -9,7 +9,7 @@
         /// </summary>
         /// <param name="miner"></param>
         /// <param name="resource"></param>
-        internal MinerEntry(IMiner miner, MinerResource resource)
+        internal MinerEntry(IMiner miner, MinerDevice resource)
         {
             Miner = miner;
             Resource = resource;
@@ -23,7 +23,7 @@
         /// <summary>
         /// Resource miner is consuming.
         /// </summary>
-        public MinerResource Resource { get; private set; }
+        public MinerDevice Resource { get; private set; }
 
     }
 }

@@ -65,7 +65,7 @@
     <Compile Include="MinerEntry.cs" />
     <Compile Include="MinerHost.cs" />
     <Compile Include="MinerFactoryAttribute.cs" />
-    <Compile Include="MinerResource.cs" />
+    <Compile Include="MinerDevice.cs" />
     <Compile Include="Pool.cs" />
     <Compile Include="PoolConfigurationElement.cs" />
     <Compile Include="PoolsConfigurationCollection.cs" />

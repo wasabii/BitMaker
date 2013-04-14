@@ -15,37 +15,31 @@ namespace BitMaker.Miner.Cpu
         /// <summary>
         /// All available CPUs in the system.
         /// </summary>
-        static readonly IEnumerable<MinerResource> cpuResources =
+        static readonly IEnumerable<CpuDevice> cpus =
             Enumerable.Range(0, Environment.ProcessorCount)
-            .Select(i => new CpuResource() { Id = "CPU" + i })
+            .Select(i => new CpuDevice() { Id = "CPU" + i })
             .ToArray();
 
         /// <summary>
         /// <see cref="T:CpuMiner"/> can consume all of the available processors in the system.
         /// </summary>
-        public virtual IEnumerable<MinerResource> Resources
+        public virtual IEnumerable<CpuDevice> Cpus
         {
-            get { return cpuResources; }
+            get { return cpus; }
         }
 
         /// <summary>
-        /// Invoked by the host to begin a new miner.
+        /// <see cref="T:CpuMiner"/> can consume all of the available processors in the system.
         /// </summary>
-        /// <param name="context"></param>
-        /// <param name="resource"></param>
-        /// <returns></returns>
-        public IMiner StartMiner(IMinerContext context, MinerResource resource)
+        public virtual IEnumerable<MinerDevice> Devices
         {
-            return StartMiner(context, (CpuResource)resource);
+            get { return cpus; }
         }
 
         /// <summary>
-        /// Implemented by children of <see cref="T:CpuMinerFactory"/> to start a custom miner implementation.
+        /// Override to implement CPU miners.
         /// </summary>
-        /// <param name="context"></param>
-        /// <param name="resource"></param>
-        /// <returns></returns>
-        public abstract new IMiner StartMiner(IMinerContext context, CpuResource resource);
+        public abstract IEnumerable<IMiner> Miners { get; }
 
     }
 

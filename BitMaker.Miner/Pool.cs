@@ -103,7 +103,10 @@ namespace BitMaker.Miner
                 return null;
 
             // extract user information from url
-            var user = url.UserInfo.Split(':').Select(i => HttpUtility.UrlDecode(i)).ToArray();
+            var user = url.UserInfo
+                .Split(':')
+                .Select(i => HttpUtility.UrlDecode(i))
+                .ToArray();
 
             // create request, authenticating using information in the url
             var req = (HttpWebRequest)HttpWebRequest.Create(url);
@@ -168,6 +171,22 @@ namespace BitMaker.Miner
                 longPollUrl = new Uri(longPollUrlStr);
             else
                 longPollUrl = new Uri(url, longPollUrlStr);
+
+            // longPollUrl does not specify user info, but userinfo was required on initial url
+            if (string.IsNullOrWhiteSpace(longPollUrl.UserInfo) && !string.IsNullOrWhiteSpace(url.UserInfo))
+            {
+                var b = new UriBuilder(longPollUrl);
+                var u = url.UserInfo
+                    .Split(':')
+                    .Select(i => HttpUtility.UrlDecode(i))
+                    .ToArray();
+                if (u.Length >= 2)
+                {
+                    b.UserName = u[0];
+                    b.Password = u[1];
+                }
+                longPollUrl = b.Uri;
+            }
 
             // retrieve invocation response
             using (var txt = new StreamReader(webResponse.GetResponseStream()))
@@ -346,7 +365,7 @@ namespace BitMaker.Miner
                 return response.Result;
             }
         }
-        
+
         /// <summary>
         /// Disposes of the pool and releases all resources associated with it.
         /// </summary>

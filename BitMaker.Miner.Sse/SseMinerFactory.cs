@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.ComponentModel.Composition;
 using System.Linq;
 
 using BitMaker.Miner.Cpu;
@@ -21,25 +22,34 @@ namespace BitMaker.Miner.Sse
         static readonly bool hasSse = SseMinerUtils.Detect();
 
         /// <summary>
+        /// Available miners.
+        /// </summary>
+        readonly IEnumerable<SseMiner> miners;
+
+        /// <summary>
         /// Gets the available resources to be allocated to miners.
         /// </summary>
-        public override IEnumerable<MinerResource> Resources
+        public override IEnumerable<MinerDevice> Devices
         {
-            get { return hasSse ? base.Resources : Enumerable.Empty<MinerResource>(); }
+            get { return hasSse ? base.Devices : Enumerable.Empty<MinerDevice>(); }
         }
 
         /// <summary>
-        /// Starts a new instance of the miner.
+        /// Initializes a new instance.
         /// </summary>
         /// <param name="context"></param>
-        /// <param name="resource"></param>
-        /// <returns></returns>
-        public override IMiner StartMiner(IMinerContext context, CpuResource resource)
+        [ImportingConstructor]
+        public SseMinerFactory([Import] IMinerContext context)
         {
-            var miner = new SseMiner(context, (CpuResource)resource);
-            miner.Start();
+            miners = Cpus
+                .Where(i => hasSse)
+                .Select(i => new SseMiner(context, i))
+                .ToList();
+        }
 
-            return miner;
+        public override IEnumerable<IMiner> Miners
+        {
+            get { return miners; }
         }
 
     }

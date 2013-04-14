@@ -17,62 +17,67 @@ namespace BitMaker.Miner
     public class MinerHost : IMinerContext
     {
 
-        private object syncRoot = new object();
+        /// <summary>
+        /// Milliseconds between recalculation of statistics.
+        /// </summary>
+        static readonly int statisticsPeriod = (int)TimeSpan.FromSeconds(.25).TotalMilliseconds;
+
+        /// <summary>
+        /// Contains MEF integrated components.
+        /// </summary>
+        CompositionContainer container = new CompositionContainer(new ApplicationCatalog());
+
+        object syncRoot = new object();
 
         /// <summary>
         /// Thread that starts execution of the miners.
         /// </summary>
-        private Thread mainThread;
+        Thread mainThread;
 
         /// <summary>
         /// Indicates that the host should start.
         /// </summary>
-        private bool run;
+        bool run;
 
         /// <summary>
         /// Indicates that the host has started.
         /// </summary>
-        private bool running;
+        bool running;
 
         /// <summary>
         /// Available pools to retrieve work from.
         /// </summary>
-        private List<Pool> pools;
-
-        /// <summary>
-        /// Milliseconds between recalculation of statistics.
-        /// </summary>
-        private static int statisticsPeriod = (int)TimeSpan.FromSeconds(.25).TotalMilliseconds;
+        List<Pool> pools;
 
         /// <summary>
         /// Time the statistics were last calculated.
         /// </summary>
-        private Stopwatch statisticsStopWatch;
+        Stopwatch statisticsStopWatch;
 
         /// <summary>
         /// Timer that fires to collect statistics.
         /// </summary>
-        private System.Timers.Timer statisticsTimer;
+        System.Timers.Timer statisticsTimer;
 
         /// <summary>
         /// Collects statistics about hash rate per second.
         /// </summary>
-        private int hashesPerSecond;
+        int hashesPerSecond;
 
         /// <summary>
         /// To report on hash generation rate.
         /// </summary>
-        private int statisticsHashCount;
+        int statisticsHashCount;
 
         /// <summary>
         /// Tracks previous hash counts and elapsed time.
         /// </summary>
-        private LinkedList<Tuple<long, long>> statisticsHistory;
+        LinkedList<Tuple<long, long>> statisticsHistory;
 
         /// <summary>
         /// Total hash count.
         /// </summary>
-        private long hashCount;
+        long hashCount;
 
         /// <summary>
         /// Available miner factories.
@@ -83,7 +88,7 @@ namespace BitMaker.Miner
         /// <summary>
         /// Currently executing miners.
         /// </summary>
-        public List<MinerEntry> Miners { get; private set; }
+        public List<IMiner> Miners { get; private set; }
 
         /// <summary>
         /// Initializes a new instance.
@@ -91,10 +96,11 @@ namespace BitMaker.Miner
         public MinerHost()
         {
             // import available plugins
-            new CompositionContainer(new ApplicationCatalog()).SatisfyImportsOnce(this);
+            container.ComposeExportedValue<IMinerContext>(this);
+            container.SatisfyImportsOnce(this);
 
             // default value
-            Miners = new List<MinerEntry>();
+            Miners = new List<IMiner>();
 
             // thread handles start and stop
             mainThread = new Thread(MainThread);
@@ -173,44 +179,45 @@ namespace BitMaker.Miner
                         .Where(i => cfg.Miners.Any(j => j.Type.IsInstanceOfType(i)));
 
                 // resources, with the miner factories that can use them
-                var resourceSets = factories
-                    .SelectMany(i => i.Resources
-                        .Select(j => new 
+                var resourceMiners = factories
+                    .SelectMany(i => i.Miners
+                        .Select(j => new
                         {
                             Factory = i,
-                            Resource = j,
+                            Miner = j,
+                            Resource = j.Device,
                         }))
                     .GroupBy(i => i.Resource)
                     .Select(i => new
                     {
                         Resource = i.Key,
-                        Factories = i
-                            .Select(j => j.Factory)
+                        Miners = i
+                            .Select(j => j.Miner)
                             .ToList(),
                     })
                     .ToList();
 
                 // for each resource, start the appropriate miner
-                foreach (var resourceSet in resourceSets)
+                foreach (var resourceMiner in resourceMiners)
                 {
-                    IMinerFactory topFactory = null;
+                    IMiner topMiner = null;
                     int topHashCount = 0;
 
-                    if (resourceSet.Factories.Count == 1)
+                    if (resourceMiner.Miners.Count == 1)
                         // only a single miner factory can consume this resource, so just use it
-                        topFactory = resourceSet.Factories[0];
+                        topMiner = resourceMiner.Miners[0];
                     else
                     {
                         // multiple miners claim the ability to consume this resource
-                        foreach (var factory in resourceSet.Factories)
+                        foreach (var miner in resourceMiner.Miners)
                         {
-                            Console.Write("Testing Miner: {0}/{1}... ", factory, resourceSet.Resource);
+                            Console.Write("Testing Miner: {0}", miner);
 
                             // sample the hash rate from the proposed miner
-                            int hashes = SampleMiner(factory, resourceSet.Resource);
+                            int hashes = SampleMiner(miner);
                             if (hashes > topHashCount)
                             {
-                                topFactory = factory;
+                                topMiner = miner;
                                 topHashCount = hashes;
                             }
 
@@ -228,7 +235,7 @@ namespace BitMaker.Miner
                         break;
 
                     // start production miner
-                    StartMiner(topFactory, resourceSet.Resource, this);
+                    StartMiner(topMiner);
                 }
 
                 // wait until we're told to terminate
@@ -238,7 +245,7 @@ namespace BitMaker.Miner
 
                 // shut down each executing miner
                 while (Miners.Any())
-                    StopMiner(Miners[0].Miner);
+                    StopMiner(Miners[0]);
 
                 lock (syncRoot)
                 {
@@ -266,32 +273,22 @@ namespace BitMaker.Miner
         /// <summary>
         /// Starts a new miner.
         /// </summary>
-        /// <param name="factory"></param>
-        /// <param name="resource"></param>
-        /// <param name="context"></param>
+        /// <param name="miner"></param>
         /// <returns></returns>
-        private IMiner StartMiner(IMinerFactory factory, MinerResource resource, IMinerContext context)
+        void StartMiner(IMiner miner)
         {
-            lock (syncRoot)
-            {
-                var miner = factory.StartMiner(context, resource);
-                Miners.Add(new MinerEntry(miner, resource));
-                return miner;
-            }
+            Miners.Add(miner);
+            miner.Start();
         }
 
         /// <summary>
         /// Stops the given miner.
         /// </summary>
         /// <param name="miner"></param>
-        private void StopMiner(IMiner miner)
+        void StopMiner(IMiner miner)
         {
-            lock (syncRoot)
-            {
-                var entry = Miners.Single(i => i.Miner == miner);
-                miner.Stop();
-                Miners.Remove(entry);
-            }
+            miner.Stop();
+            Miners.Remove(miner);
         }
 
         /// <summary>
@@ -467,13 +464,13 @@ namespace BitMaker.Miner
         /// <summary>
         /// Starts a miner for a predetermined amount of time and records it's hash count.
         /// </summary>
-        private int SampleMiner(IMinerFactory factory, MinerResource resource)
+        private int SampleMiner(IMiner miner)
         {
             // context for sample run of miner
             var ctx = new SampleMinerContext(this);
 
             // begin the miner
-            var miner = StartMiner(factory, resource, ctx);
+            miner.Start();
 
             // allow the miner to work for a few seconds
             Thread.Sleep(5000);

@@ -46,7 +46,7 @@
   <ItemGroup>
     <Compile Include="GpuMiner.cs" />
     <Compile Include="GpuMinerFactory.cs" />
-    <Compile Include="GpuResource.cs" />
+    <Compile Include="GpuDevice.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

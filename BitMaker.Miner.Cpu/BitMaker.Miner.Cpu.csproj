@@ -45,7 +45,7 @@
   <ItemGroup>
     <Compile Include="CpuMiner.cs" />
     <Compile Include="CpuMinerFactory.cs" />
-    <Compile Include="CpuResource.cs" />
+    <Compile Include="CpuDevice.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
