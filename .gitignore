@@ -23,3 +23,9 @@
 /BitMaker.Miner.Managed/bin
 /BitMaker.Miner.Sse/bin
 /BitMaker.Miner.Sse/obj
+/BitMaker.Miner.Avx/bin
+/BitMaker.Miner.Avx/obj
+/BitMaker.Utils.Native.Avx/BitMaker.Utils.Native.Avx.vcxproj.user
+/BitMaker.Utils.Native.Avx/x64
+/BitMaker.Utils.Native.Sse/x64
+/BitMaker.Utils.Native.Sse/BitMaker.Utils.Native.Sse.vcxproj.user
