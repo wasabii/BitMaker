@@ -20,14 +20,19 @@ namespace BitMaker.Miner
     {
 
         /// <summary>
+        /// Milliseconds between refreshes of block number.
+        /// </summary>
+        static int refreshPeriod = (int)TimeSpan.FromSeconds(15).TotalMilliseconds;
+
+        /// <summary>
         /// Keeps the refresh thread alive.
         /// </summary>
-        private bool run = true;
+        bool run = true;
 
         /// <summary>
         /// Base url of the pool.
         /// </summary>
-        private Uri url;
+        Uri url;
 
         /// <summary>
         /// Gets the current block number
@@ -35,19 +40,14 @@ namespace BitMaker.Miner
         public uint CurrentBlockNumber { get; private set; }
 
         /// <summary>
-        /// Milliseconds between refreshes of block number.
-        /// </summary>
-        private static int refreshPeriod = (int)TimeSpan.FromSeconds(15).TotalMilliseconds;
-
-        /// <summary>
         /// Thread that pulls current block.
         /// </summary>
-        private Thread refreshThread;
+        Thread refreshThread;
 
         /// <summary>
         /// Url delivered by the server for long pulling.
         /// </summary>
-        private Uri longPollUrl;
+        Uri longPollUrl;
 
         /// <summary>
         /// Initializes a new instance.
@@ -67,7 +67,7 @@ namespace BitMaker.Miner
         /// <summary>
         /// Entry point for thread responsible for detecting changes in the current block number.
         /// </summary>
-        private void RefreshThreadMain()
+        void RefreshThreadMain()
         {
             while (run)
             {
@@ -96,7 +96,7 @@ namespace BitMaker.Miner
         /// <param name="miner"></param>
         /// <param name="comment"></param>
         /// <returns></returns>
-        private HttpWebRequest Open(Uri url, string method, IMiner miner, string comment)
+        HttpWebRequest Open(Uri url, string method, IMiner miner, string comment)
         {
             // method requires an absolute url to function
             if (!url.IsAbsoluteUri)
@@ -133,7 +133,7 @@ namespace BitMaker.Miner
         /// <param name="miner"></param>
         /// <param name="comment"></param>
         /// <returns></returns>
-        private HttpWebRequest OpenRpc(IMiner miner, string comment)
+        HttpWebRequest OpenRpc(IMiner miner, string comment)
         {
             return Open(url, "POST", miner, comment);
         }
@@ -144,7 +144,7 @@ namespace BitMaker.Miner
         /// <param name="miner"></param>
         /// <param name="comment"></param>
         /// <returns></returns>
-        private HttpWebRequest OpenLp(IMiner miner, string comment)
+        HttpWebRequest OpenLp(IMiner miner, string comment)
         {
             return Open(longPollUrl, "GET", miner, comment);
         }
@@ -154,7 +154,7 @@ namespace BitMaker.Miner
         /// </summary>
         /// <param name="webResponse"></param>
         /// <returns></returns>
-        private Work ParseGetWork(WebResponse webResponse)
+        Work ParseGetWork(WebResponse webResponse)
         {
             // obtain and update current block number
             uint blockNumber = 0;
@@ -271,7 +271,7 @@ namespace BitMaker.Miner
         /// <param name="miner"></param>
         /// <param name="comment"></param>
         /// <returns></returns>
-        private Work GetWorkLp(IMiner miner, string comment)
+        Work GetWorkLp(IMiner miner, string comment)
         {
             var req = OpenLp(miner, comment);
             if (req == null)
