@@ -26,11 +26,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BitMaker.Miner.Sse", "BitMa
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BitMaker.Miner.Gpu", "BitMaker.Miner.Gpu\BitMaker.Miner.Gpu.csproj", "{4276299E-7F12-438C-B963-2F7EAFC30C8F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BitMaker.Miner.Avx", "BitMaker.Miner.Avx\BitMaker.Miner.Avx.csproj", "{AA88A443-9897-4E49-A2E6-771F0367DA9B}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "BitMaker.Utils.Native.Sse", "BitMaker.Utils.Native.Sse\BitMaker.Utils.Native.Sse.vcxproj", "{90AA6371-FF81-4F7C-BC63-D993C7873FC2}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "BitMaker.Utils.Native.Avx", "BitMaker.Utils.Native.Avx\BitMaker.Utils.Native.Avx.vcxproj", "{80AA6371-FF81-4F7C-BC63-D993C7873FC2}"
 EndProject
 Global
 	GlobalSection(TestCaseManagementSettings) = postSolution
@@ -99,14 +95,6 @@ Global
 		{4276299E-7F12-438C-B963-2F7EAFC30C8F}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{4276299E-7F12-438C-B963-2F7EAFC30C8F}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{4276299E-7F12-438C-B963-2F7EAFC30C8F}.Release|x64.ActiveCfg = Release|Any CPU
-		{AA88A443-9897-4E49-A2E6-771F0367DA9B}.Debug|Mixed Platforms.ActiveCfg = Debug|x64
-		{AA88A443-9897-4E49-A2E6-771F0367DA9B}.Debug|Mixed Platforms.Build.0 = Debug|x64
-		{AA88A443-9897-4E49-A2E6-771F0367DA9B}.Debug|x64.ActiveCfg = Debug|x64
-		{AA88A443-9897-4E49-A2E6-771F0367DA9B}.Debug|x64.Build.0 = Debug|x64
-		{AA88A443-9897-4E49-A2E6-771F0367DA9B}.Release|Mixed Platforms.ActiveCfg = Release|x64
-		{AA88A443-9897-4E49-A2E6-771F0367DA9B}.Release|Mixed Platforms.Build.0 = Release|x64
-		{AA88A443-9897-4E49-A2E6-771F0367DA9B}.Release|x64.ActiveCfg = Release|x64
-		{AA88A443-9897-4E49-A2E6-771F0367DA9B}.Release|x64.Build.0 = Release|x64
 		{90AA6371-FF81-4F7C-BC63-D993C7873FC2}.Debug|Mixed Platforms.ActiveCfg = Debug|x64
 		{90AA6371-FF81-4F7C-BC63-D993C7873FC2}.Debug|Mixed Platforms.Build.0 = Debug|x64
 		{90AA6371-FF81-4F7C-BC63-D993C7873FC2}.Debug|x64.ActiveCfg = Debug|x64
@@ -115,14 +103,6 @@ Global
 		{90AA6371-FF81-4F7C-BC63-D993C7873FC2}.Release|Mixed Platforms.Build.0 = Release|x64
 		{90AA6371-FF81-4F7C-BC63-D993C7873FC2}.Release|x64.ActiveCfg = Release|x64
 		{90AA6371-FF81-4F7C-BC63-D993C7873FC2}.Release|x64.Build.0 = Release|x64
-		{80AA6371-FF81-4F7C-BC63-D993C7873FC2}.Debug|Mixed Platforms.ActiveCfg = Debug|x64
-		{80AA6371-FF81-4F7C-BC63-D993C7873FC2}.Debug|Mixed Platforms.Build.0 = Debug|x64
-		{80AA6371-FF81-4F7C-BC63-D993C7873FC2}.Debug|x64.ActiveCfg = Debug|x64
-		{80AA6371-FF81-4F7C-BC63-D993C7873FC2}.Debug|x64.Build.0 = Debug|x64
-		{80AA6371-FF81-4F7C-BC63-D993C7873FC2}.Release|Mixed Platforms.ActiveCfg = Release|x64
-		{80AA6371-FF81-4F7C-BC63-D993C7873FC2}.Release|Mixed Platforms.Build.0 = Release|x64
-		{80AA6371-FF81-4F7C-BC63-D993C7873FC2}.Release|x64.ActiveCfg = Release|x64
-		{80AA6371-FF81-4F7C-BC63-D993C7873FC2}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

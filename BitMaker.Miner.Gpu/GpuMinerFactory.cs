@@ -1,8 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
-
-
-
 
 namespace BitMaker.Miner.Gpu
 {
@@ -18,21 +16,36 @@ namespace BitMaker.Miner.Gpu
         /// <summary>
         /// All available GPUs in the system.
         /// </summary>
-        public static readonly IEnumerable<MinerResource> gpuResources = global::Cloo.ComputePlatform.Platforms
-                .SelectMany(i => i.Devices)
-                .Select(i => new GpuResource()
-                {
-                    Id = i.Name,
-                    CLDeviceHandle = i.Handle,
-                })
-                .ToList();
+        static readonly IEnumerable<MinerResource> gpuResources;
+
+        /// <summary>
+        /// Initializes the static instance.
+        /// </summary>
+        static GpuMinerFactory()
+        {
+            try
+            {
+                gpuResources = global::Cloo.ComputePlatform.Platforms
+                    .SelectMany(i => i.Devices)
+                    .Select(i => new GpuResource()
+                    {
+                        Id = i.Name,
+                        CLDeviceHandle = i.Handle,
+                    })
+                    .ToList();
+            }
+            catch (TypeInitializationException)
+            {
+                // ignore missing opencl implementation
+            }
+        }
 
         /// <summary>
         /// <see cref="T:GpuMiner"/> can consume all of the available OpenCL GPUs in the system.
         /// </summary>
         public IEnumerable<MinerResource> Resources
         {
-            get { return gpuResources; }
+            get { return gpuResources ?? Enumerable.Empty<MinerResource>(); }
         }
 
         /// <summary>
