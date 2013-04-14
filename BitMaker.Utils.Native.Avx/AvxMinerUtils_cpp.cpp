@@ -3,8 +3,6 @@
 
 #pragma managed(push, off)
 
-#define UINT32_MAX 2147483647
-
 #define endian_swap(value) ((value & 0x000000ffU) << 24 | (value & 0x0000ff00U) << 8 | (value & 0x00ff0000U) >> 8 | (value & 0xff000000U) >> 24)
 
 #define mm_or4(a, b, c, d) (_mm256_or_si256(_mm256_or_si256(a, b), c), d)
@@ -259,25 +257,22 @@ static inline void sha256_transform(__m256i *state, __m256i *block, __m256i *dst
     dst[7] = add2(state[7], h);
 }
 
-#define OSXSAVEFlag (1UL<<27)
-#define AVXFlag     ((1UL<<28)|OSXSAVEFlag)
-#define FMAFlag     ((1UL<<12)|AVXFlag|OSXSAVEFlag)
-#define CLMULFlag   ((1UL<< 1)|AVXFlag|OSXSAVEFlag)
-#define VAESFlag    ((1UL<<25)|AVXFlag|OSXSAVEFlag)
-
 bool __AvxDetect()
 {
-	int info[4];
-	__cpuid(info, 0);
-	int nIds = info[0];
+    int cpuInfo[4];
+    __cpuid(cpuInfo, 1);
+ 
+    bool osUsesXSAVE_XRSTORE = cpuInfo[2] & (1 << 27) || false;
+    bool cpuAVXSuport = cpuInfo[2] & (1 << 28) || false;
+ 
+    if (osUsesXSAVE_XRSTORE && cpuAVXSuport)
+    {
+        // Check if the OS will save the YMM registers
+        unsigned long long xcrFeatureMask = _xgetbv(_XCR_XFEATURE_ENABLED_MASK);
+        return (xcrFeatureMask & 0x6) == 6;
+    }
 
-	if (nIds >= 1)
-	{
-		__cpuid(info, 0x00000001);
-		return (info[2] & ((int)1 << 28)) != 0;
-	}
-
-	return false;
+    return false;
 }
 
 bool __AvxSearch(unsigned int *round1State, unsigned char *round1Block2, unsigned __int32 *round2State, unsigned char *round2Block1, unsigned __int32 *nonce_, avxCheckFunc check)
@@ -314,7 +309,8 @@ bool __AvxSearch(unsigned int *round1State, unsigned char *round1Block2, unsigne
     for (;;)
     {
         // set nonce in blocks
-        round1Block2_m256i[3] = _mm256_add_epi32(_mm256_set1_epi32(nonce), nonce_inc_m256i);
+        __m256i g = _mm256_set1_epi32(nonce);
+        round1Block2_m256i[3] = _mm256_add_epi32(g, nonce_inc_m256i);
         
         // transform variable second half of block using saved state from first block, into pre-padded round 2 block (end of first hash)
         sha256_transform(round1State_m256i, round1Block2_m256i, round2Block1_m256i);
@@ -327,7 +323,7 @@ bool __AvxSearch(unsigned int *round1State, unsigned char *round1Block2, unsigne
         unsigned __int64 *p64 = (unsigned __int64*)&p;
 
         // one of the two sides of the vector has values
-        if ((p64[0] != 0) | (p64[1] != 0) | p64[2] != 0 | p64[3] != 0)
+        if ((p64[0] != 0) | (p64[1] != 0) | (p64[2] != 0) | (p64[3] != 0))
         {
             // first result
             if (mm256_extract_epi16(p, 0) != 0)

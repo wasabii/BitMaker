@@ -3,8 +3,6 @@
 
 #pragma managed(push, off)
 
-#define UINT32_MAX 2147483647
-
 #define endian_swap(value) ((value & 0x000000ffU) << 24 | (value & 0x0000ff00U) << 8 | (value & 0x00ff0000U) >> 8 | (value & 0xff000000U) >> 24)
 
 #define mm_or4(a, b, c, d) (_mm_or_si128(_mm_or_si128(_mm_or_si128(a, b), c), d))
@@ -260,17 +258,17 @@ static inline void sha256_transform(__m128i *state, __m128i *block, __m128i *dst
 
 bool __SseDetect()
 {
-	int info[4];
-	__cpuid(info, 0);
-	int nIds = info[0];
+    int info[4];
+    __cpuid(info, 0);
+    int nIds = info[0];
 
-	if (nIds >= 1)
-	{
-		__cpuid(info, 0x00000001);
-		return (info[3] & ((int)1 << 26)) != 0;
-	}
+    if (nIds >= 1)
+    {
+        __cpuid(info, 0x00000001);
+        return (info[3] & ((int)1 << 26)) != 0;
+    }
 
-	return false;
+    return false;
 }
 
 bool __SseSearch(unsigned int *round1State, unsigned char *round1Block2, unsigned __int32 *round2State, unsigned char *round2Block1, unsigned __int32 *nonce_, sseCheckFunc check)
