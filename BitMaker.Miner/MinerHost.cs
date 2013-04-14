@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.ComponentModel.Composition.Hosting;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 
@@ -17,10 +16,17 @@ namespace BitMaker.Miner
     public class MinerHost : IMinerContext
     {
 
+        static readonly TimeSpan STATISTICS_UPDATE = TimeSpan.FromSeconds(1);
+        static readonly TimeSpan STATISTICS_DELAY = TimeSpan.FromSeconds(6);
+
         /// <summary>
-        /// Milliseconds between recalculation of statistics.
+        /// Gets the current time in nano-seconds.
         /// </summary>
-        static readonly int statisticsPeriod = (int)TimeSpan.FromSeconds(.25).TotalMilliseconds;
+        /// <returns></returns>
+        static long Now()
+        {
+            return DateTime.UtcNow.Ticks * 100 / 1000000;
+        }
 
         /// <summary>
         /// Contains MEF integrated components.
@@ -50,34 +56,16 @@ namespace BitMaker.Miner
         List<Pool> pools;
 
         /// <summary>
-        /// Time the statistics were last calculated.
-        /// </summary>
-        Stopwatch statisticsStopWatch;
-
-        /// <summary>
         /// Timer that fires to collect statistics.
         /// </summary>
         System.Timers.Timer statisticsTimer;
 
-        /// <summary>
-        /// Collects statistics about hash rate per second.
-        /// </summary>
-        int hashesPerSecond;
-
-        /// <summary>
-        /// To report on hash generation rate.
-        /// </summary>
-        int statisticsHashCount;
-
-        /// <summary>
-        /// Tracks previous hash counts and elapsed time.
-        /// </summary>
-        LinkedList<Tuple<long, long>> statisticsHistory;
-
-        /// <summary>
-        /// Total hash count.
-        /// </summary>
+        long startTime;
         long hashCount;
+        long previousHashCount;
+        double previousAdjustedHashCount;
+        long previousAdjustedStartTime;
+        double hashesPerSecond;
 
         /// <summary>
         /// Available miner factories.
@@ -139,7 +127,7 @@ namespace BitMaker.Miner
         /// <summary>
         /// Begins program execution on an independent thread so as not to block callers.
         /// </summary>
-        private void MainThread()
+        void MainThread()
         {
             var cfg = ConfigurationSection.GetDefaultSection();
 
@@ -152,18 +140,16 @@ namespace BitMaker.Miner
                 // begin timer to compile statistics, even while testing miners
                 lock (syncRoot)
                 {
-                    // clear statistics
+                    previousHashCount = 0;
+                    previousAdjustedHashCount = 0.0;
+                    previousAdjustedStartTime = startTime = Now() - 1;
                     hashesPerSecond = 0;
-                    statisticsHashCount = 0;
-                    statisticsHistory = new LinkedList<Tuple<long, long>>();
-                    hashCount = 0;
 
                     statisticsTimer = new System.Timers.Timer();
                     statisticsTimer.Elapsed += (s, a) => CalculateStatistics();
-                    statisticsTimer.AutoReset = false;
-                    statisticsTimer.Interval = statisticsPeriod;
+                    statisticsTimer.AutoReset = true;
+                    statisticsTimer.Interval = STATISTICS_UPDATE.TotalMilliseconds;
                     statisticsTimer.Start();
-                    statisticsStopWatch = new Stopwatch();
 
                     // create pools from configuration
                     pools = cfg.Pools
@@ -200,42 +186,19 @@ namespace BitMaker.Miner
                 // for each resource, start the appropriate miner
                 foreach (var resourceMiner in resourceMiners)
                 {
-                    IMiner topMiner = null;
-                    int topHashCount = 0;
-
-                    if (resourceMiner.Miners.Count == 1)
-                        // only a single miner factory can consume this resource, so just use it
-                        topMiner = resourceMiner.Miners[0];
-                    else
-                    {
-                        // multiple miners claim the ability to consume this resource
-                        foreach (var miner in resourceMiner.Miners)
-                        {
-                            Console.Write("Testing Miner: {0}", miner);
-
-                            // sample the hash rate from the proposed miner
-                            int hashes = SampleMiner(miner);
-                            if (hashes > topHashCount)
-                            {
-                                topMiner = miner;
-                                topHashCount = hashes;
-                            }
-
-                            Console.Write(hashes);
-                            Console.WriteLine();
-
-                            // break out prematurely if told to stop
-                            if (!run)
-                                break;
-                        }
-                    }
+                    // select miner with the top number of sample hashes, or first
+                    var miner = resourceMiner.Miners.Count == 1 ? resourceMiner.Miners[0] : resourceMiner.Miners
+                        .Select(i => new { Miner = i, Hashes = run ? SampleMiner(i) : 0 })
+                        .OrderByDescending(i => i.Hashes)
+                        .Select(i => i.Miner)
+                        .FirstOrDefault();
 
                     // break out prematurely if told to stop
                     if (!run)
                         break;
 
                     // start production miner
-                    StartMiner(topMiner);
+                    StartMiner(miner);
                 }
 
                 // wait until we're told to terminate
@@ -252,8 +215,6 @@ namespace BitMaker.Miner
                     // stop statistics stuff
                     statisticsTimer.Dispose();
                     statisticsTimer = null;
-                    statisticsStopWatch = null;
-                    statisticsHistory = null;
 
                     // dispose of the pools
                     if (pools != null)
@@ -302,7 +263,7 @@ namespace BitMaker.Miner
         /// <summary>
         /// Reports the average number of hashes being generated per-second.
         /// </summary>
-        public int HashesPerSecond
+        public double HashesPerSecond
         {
             get { return hashesPerSecond; }
         }
@@ -313,7 +274,7 @@ namespace BitMaker.Miner
         /// <param name="func"></param>
         /// <param name="delay"></param>
         /// <returns></returns>
-        private static R Retry<R>(Func<R> func, TimeSpan delay)
+        static R Retry<R>(Func<R> func, TimeSpan delay)
         {
             while (true)
                 try
@@ -381,55 +342,44 @@ namespace BitMaker.Miner
         /// </summary>
         /// <param name="plugin"></param>
         /// <param name="count"></param>
-        public void ReportHashes(IMiner plugin, uint count)
+        public void ReportHashes(IMiner plugin, long count)
         {
-            Interlocked.Add(ref statisticsHashCount, (int)count);
+            Interlocked.Add(ref hashCount, count);
         }
 
         /// <summary>
         /// Calculates statistics since previous invocation.
         /// </summary>
-        private void CalculateStatistics()
+        void CalculateStatistics()
         {
-            lock (syncRoot)
+            statisticsTimer.Stop();
+
+            var now = Now();
+            var currentHashCount = Interlocked.Read(ref hashCount);
+            var adjustedHashCount = (double)(currentHashCount - previousHashCount) / (double)(now - previousAdjustedStartTime);
+            var hashLongCount = (double)currentHashCount / (double)(now - startTime) / 1000.0;
+
+            if (now - startTime > STATISTICS_DELAY.TotalSeconds * 2)
+                hashesPerSecond = (long)(adjustedHashCount + previousAdjustedHashCount) / 2.0 * 1000;
+
+            if (now - STATISTICS_DELAY.TotalSeconds * 2 > previousAdjustedStartTime)
             {
-                // obtain current values, then restart watch
-                statisticsStopWatch.Stop();
-                var hc = Interlocked.Exchange(ref statisticsHashCount, 0);
-                var df = statisticsStopWatch.ElapsedMilliseconds;
-                statisticsStopWatch.Restart();
-
-                // append current statistics to the history
-                statisticsHistory.AddLast(new Tuple<long, long>(df, hc));
-
-                // keep statistics history limited
-                if (statisticsHistory.Count > 25)
-                    statisticsHistory.RemoveFirst();
-
-                // add periodic count to total
-                Interlocked.Add(ref hashCount, hc);
-
-                // total ellapsed time and hashes
-                long hdf = statisticsHistory.Sum(i => i.Item1);
-                long hhc = statisticsHistory.Sum(i => i.Item2);
-
-                if (hdf > 1000)
-                    hashesPerSecond = (int)(hhc / (hdf / 1000));
-
-                // restart timer
-                statisticsTimer.Start();
+                previousHashCount = currentHashCount;
+                previousAdjustedHashCount = adjustedHashCount;
+                previousAdjustedStartTime = now - 1;
             }
+
+            statisticsTimer.Start();
         }
 
         /// <summary>
         /// Context to be used to sample the hash rate of a miner.
         /// </summary>
-        private class SampleMinerContext : IMinerContext
+        class SampleMinerContext : IMinerContext
         {
 
-            private MinerHost host;
-
-            internal int hashCount;
+            MinerHost host;
+            internal long hashCount;
 
             /// <summary>
             /// Initializes a new instance.
@@ -450,10 +400,10 @@ namespace BitMaker.Miner
                 return host.SubmitWork(miner, work, comment);
             }
 
-            public void ReportHashes(IMiner plugin, uint count)
+            public void ReportHashes(IMiner plugin, long count)
             {
                 // keep our own counter of hashes
-                Interlocked.Add(ref hashCount, (int)count);
+                Interlocked.Add(ref hashCount, count);
 
                 // report to main host, these afterall do count for something
                 host.ReportHashes(plugin, count);
@@ -464,7 +414,7 @@ namespace BitMaker.Miner
         /// <summary>
         /// Starts a miner for a predetermined amount of time and records it's hash count.
         /// </summary>
-        private int SampleMiner(IMiner miner)
+        long SampleMiner(IMiner miner)
         {
             // context for sample run of miner
             var ctx = new SampleMinerContext(this);

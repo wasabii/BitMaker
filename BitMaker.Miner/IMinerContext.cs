@@ -26,7 +26,7 @@
         /// </summary>
         /// <param name="plugin"><see cref="T:IPlugin"/> that was responsible for generation of the hashes</param>
         /// <param name="count">number of hashes to report</param>
-        void ReportHashes(IMiner plugin, uint count);
+        void ReportHashes(IMiner plugin, long count);
 
     }
 

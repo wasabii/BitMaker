@@ -10,7 +10,7 @@
         /// <summary>
         /// Unique identifier key of the resource.
         /// </summary>
-        public string Id { get; set; }
+        public virtual string Id { get; set; }
 
     }
 

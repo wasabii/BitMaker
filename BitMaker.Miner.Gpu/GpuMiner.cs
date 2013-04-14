@@ -1,12 +1,10 @@
 ﻿using System;
-using System.IO;
-using System.Linq;
+using System.Text;
 using System.Threading;
 
 using Cloo;
 
 using BitMaker.Utils;
-using System.Text;
 
 namespace BitMaker.Miner.Gpu
 {
@@ -16,28 +14,6 @@ namespace BitMaker.Miner.Gpu
     /// </summary>
     public sealed class GpuMiner : IMiner
     {
-
-        /// <summary>
-        /// Device names that support BFI_INT.
-        /// </summary>
-        static readonly string[] BFI_INT_DEVICES = new string[]
-        {
-			"Cedar",
-            "Redwood",
-            "Juniper",
-            "Cypress",
-            "Hemlock",
-            "Caicos",
-            "Turks",
-            "Barts",
-            "Cayman",
-            "Antilles",
-            "Palm",
-            "Sumo",
-            "Wrestler",
-            "WinterPark",
-            "BeaverCreek",
-	    };
 
         readonly object syncRoot = new object();
 
@@ -76,10 +52,6 @@ namespace BitMaker.Miner.Gpu
         /// Thread that pulls and processes work.
         /// </summary>
         Thread workThread;
-
-        long worksize = 0;
-        bool hasBitAlign = false;
-        bool hasBFI_INT = false;
 
         ComputeContext clContext;
         ComputeDevice clDevice;
@@ -179,13 +151,13 @@ namespace BitMaker.Miner.Gpu
             clQueue.Dispose();
             clQueue = null;
 
-            clDevice = null;
-
             clProgram.Dispose();
             clProgram = null;
 
             clContext.Dispose();
             clContext = null;
+
+            clDevice = null;
         }
 
         /// <summary>
@@ -234,19 +206,11 @@ namespace BitMaker.Miner.Gpu
             if (clKernel != null)
                 return;
 
-            // select the device we've been instructed to use
-            clDevice = ComputePlatform.Platforms
-                .SelectMany(i => i.Devices)
-                .SingleOrDefault(i => i.Handle.Value == Gpu.CLDeviceHandle.Value);
-
-            // configure device information
-            worksize = clDevice.MaxWorkGroupSize;
-            hasBitAlign = clDevice.Extensions.Contains("cl_amd_media_ops");
-            hasBFI_INT = false && hasBitAlign && BFI_INT_DEVICES.Any(i => clDevice.Name.Contains(i));
+            clDevice = Gpu.CLDevice;
 
             // context we'll be working underneath
             clContext = new ComputeContext(
-                new ComputeDevice[] { clDevice },
+                new[] { clDevice },
                 new ComputeContextPropertyList(clDevice.Platform),
                 null,
                 IntPtr.Zero);
@@ -262,11 +226,11 @@ namespace BitMaker.Miner.Gpu
             clProgram = new ComputeProgram(clContext, Gpu.GetSource());
 
             var b = new StringBuilder();
-            if (worksize > 0)
-                b.AppendFormat(" -D WORKSIZE={0}", worksize);
-            if (hasBitAlign)
+            if (Gpu.WorkSize > 0)
+                b.AppendFormat(" -D WORKSIZE={0}", Gpu.WorkSize);
+            if (Gpu.HasBitAlign)
                 b.Append(" -D BITALIGN");
-            if (hasBFI_INT)
+            if (Gpu.HasBfiInt)
                 b.Append(" -D BFIINT");
 
             try
@@ -283,22 +247,27 @@ namespace BitMaker.Miner.Gpu
         }
 
         /// <summary>
+        /// Reports progress and checks for whether we should terminate the current work item.
+        /// </summary>
+        /// <param name="work"></param>
+        /// <param name="?"></param>
+        /// <returns></returns>
+        bool Progress(Work work, long hashes)
+        {
+            // report hashes to context
+            Context.ReportHashes(this, hashes);
+
+            // abort if we are working on stale work, or if instructed to
+            return work.Pool.CurrentBlockNumber == work.BlockNumber && !CancellationToken.IsCancellationRequested;
+        }
+
+        /// <summary>
         /// Attempts to solve the given work with the specified solver. Returns <c>true</c> if a solution is found.
         /// <paramref name="work"/> is updated to reflect the solution.
         /// </summary>
         /// <param name="work"></param>
         unsafe void Work(Work work)
         {
-            // invoked periodically to report hashes and check status
-            var check = (Func<uint, bool>)(i =>
-            {
-                // report hashes to context
-                Context.ReportHashes(this, i);
-
-                // abort if we are working on stale work, or if instructed to
-                return work.Pool.CurrentBlockNumber == work.BlockNumber && !CancellationToken.IsCancellationRequested;
-            });
-
             // allocate buffers to hold hashing work
             byte[] round1Blocks, round2Blocks;
             uint[] round1State, round1State2Pre, round2State;
@@ -347,7 +316,7 @@ namespace BitMaker.Miner.Gpu
             bool outputAlt = true;
 
             // size of local work groups
-            long localWorkSize = clDevice.MaxWorkGroupSize;
+            long localWorkSize = Gpu.WorkSize;
 
             // number of items to dispatch to GPU at a time
             long globalWorkSize = localWorkSize * localWorkSize * 8;
@@ -358,30 +327,28 @@ namespace BitMaker.Miner.Gpu
             // continue dispatching work to the GPU
             while (true)
             {
-                // list of output events
-                var events = new ComputeEventList();
+                // if one loop has completed
+                if (nonce > 0)
+                {
+                    // read output into current output buffer then reset buffer
+                    clQueue.ReadFromBuffer(outputAlt ? clBuffer0 : clBuffer1, ref output, true, null);
 
-                // read output into current output buffer then reset buffer
-                clQueue.ReadFromBuffer(outputAlt ? clBuffer0 : clBuffer1, ref output, true, events);
+                    // scan output buffer for produced nonce values
+                    fixed (uint* o = output)
+                        for (int j = 0; j < 16; j++)
+                            if (o[j] != 0)
+                            {
+                                // replace header data on work
+                                fixed (byte* headerPtr = work.Header)
+                                    ((uint*)headerPtr)[19] = output[j];
 
-                // scan output buffer for produced nonce values
-                bool outputDirty = false;
-                for (int j = 0; j < 16; j++)
-                    if (output[j] != 0)
-                    {
-                        outputDirty = true;
+                                // submit work for validation
+                                Context.SubmitWork(this, work, GetType().Name);
 
-                        // replace header data on work
-                        fixed (byte* headerPtr = work.Header)
-                            ((uint*)headerPtr)[19] = output[j];
-
-                        // submit work for validation
-                        Context.SubmitWork(this, work, GetType().Name);
-                    }
-
-                // clear output buffer
-                if (outputDirty)
-                    clQueue.WriteToBuffer(outputZero, outputAlt ? clBuffer0 : clBuffer1, true, events);
+                                // clear output buffer
+                                clQueue.WriteToBuffer(outputZero, outputAlt ? clBuffer0 : clBuffer1, true, null);
+                            }
+                }
 
                 // execute kernel with computed values
                 clQueue.Finish();
@@ -413,14 +380,10 @@ namespace BitMaker.Miner.Gpu
                 clKernel.SetValueArgument(25, round1State[6]);
                 clKernel.SetValueArgument(26, round1State[7]);
                 clKernel.SetMemoryArgument(27, outputAlt ? clBuffer0 : clBuffer1);
-                clQueue.Execute(clKernel, null, new long[] { globalWorkSize }, new long[] { localWorkSize }, events);
-
-                // dispose of all events floating around in the list
-                foreach (var e in events)
-                    e.Dispose();
+                clQueue.Execute(clKernel, null, new long[] { globalWorkSize }, new long[] { localWorkSize }, null);
 
                 // report that we just hashed the work size number of hashes
-                if (!check((uint)globalWorkSize))
+                if (!Progress(work, globalWorkSize))
                     break;
 
                 // update nonce and check whether it is now less than the work size, which indicates it overflowed

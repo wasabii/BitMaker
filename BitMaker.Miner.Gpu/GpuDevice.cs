@@ -1,6 +1,9 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
+using Cloo;
+using Cloo.Bindings;
 
 namespace BitMaker.Miner.Gpu
 {
@@ -11,19 +14,84 @@ namespace BitMaker.Miner.Gpu
     public class GpuDevice : MinerDevice
     {
 
+        /// <summary>
+        /// Device names that support BFI_INT.
+        /// </summary>
+        static readonly string[] BFI_INT_DEVICES = new string[]
+        {
+			"Cedar",
+            "Redwood",
+            "Juniper",
+            "Cypress",
+            "Hemlock",
+            "Caicos",
+            "Turks",
+            "Barts",
+            "Cayman",
+            "Antilles",
+            "Palm",
+            "Sumo",
+            "Wrestler",
+            "WinterPark",
+            "BeaverCreek",
+	    };
+
         static readonly string[] UPPER = { "X", "Y", "Z", "W", "T", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "k" };
         static readonly string[] LOWER = { "x", "y", "z", "w", "t", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k" };
-
-        public global::Cloo.Bindings.CLDeviceHandle CLDeviceHandle { get; set; }
 
         /// <summary>
         /// Gets the raw GPU source.
         /// </summary>
         /// <returns></returns>
-        string GetRawSource()
+        static string GetRawSource()
         {
-            using (var rdr = new StreamReader(GetType().Assembly.GetManifestResourceStream("BitMaker.Miner.Gpu.DiabloMiner.cl")))
+            using (var rdr = new StreamReader(typeof(GpuDevice).Assembly.GetManifestResourceStream("BitMaker.Miner.Gpu.DiabloMiner.cl")))
                 return rdr.ReadToEnd();
+        }
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="clDeviceHandle"></param>
+        public GpuDevice(CLDeviceHandle clDeviceHandle)
+        {
+            CLDeviceHandle = clDeviceHandle;
+            CLDevice = ComputePlatform.Platforms
+                .SelectMany(i => i.Devices)
+                .SingleOrDefault(i => i.Handle.Value == CLDeviceHandle.Value);
+        }
+
+        public override string Id
+        {
+            get { return CLDevice.Name; }
+        }
+
+        /// <summary>
+        /// Handle to the CLDevice.
+        /// </summary>
+        public CLDeviceHandle CLDeviceHandle { get; private set; }
+
+        /// <summary>
+        /// Gets the OpenCL <see cref="ComputeDevice"/>.
+        /// </summary>
+        public ComputeDevice CLDevice { get; private set; }
+
+        /// <summary>
+        /// Gets the maximum number of work-items in a work-group.
+        /// </summary>
+        public long WorkSize
+        {
+            get { return CLDevice.MaxWorkGroupSize; }
+        }
+
+        public bool HasBitAlign
+        {
+            get { return CLDevice.Extensions.Contains("cl_amd_media_ops"); }
+        }
+
+        public bool HasBfiInt
+        {
+            get { return false && HasBitAlign && BFI_INT_DEVICES.Any(i => CLDevice.Name.Contains(i)); }
         }
 
         /// <summary>

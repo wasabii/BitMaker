@@ -14,6 +14,11 @@ namespace BitMaker.Miner.Gpu
     public sealed class GpuMinerFactory : IMinerFactory
     {
 
+        static readonly string[] excludedVendors = new string[]
+        {
+            "GenuineIntel",
+        };
+
         /// <summary>
         /// All available GPUs in the system.
         /// </summary>
@@ -28,11 +33,8 @@ namespace BitMaker.Miner.Gpu
             {
                 gpus = global::Cloo.ComputePlatform.Platforms
                     .SelectMany(i => i.Devices)
-                    .Select(i => new GpuDevice()
-                    {
-                        Id = i.Name,
-                        CLDeviceHandle = i.Handle,
-                    })
+                    .Where(i => !excludedVendors.Contains(i.Vendor))
+                    .Select(i => new GpuDevice(i.Handle))
                     .ToList();
             }
             catch (TypeInitializationException)
