@@ -227,7 +227,7 @@ namespace BitMaker.Miner.Gpu
 
             var b = new StringBuilder();
             if (Gpu.WorkSize > 0)
-                b.AppendFormat(" -D WORKSIZE={0}", Gpu.WorkSize);
+                b.Append(" -D WORKSIZE=").Append(Gpu.WorkSize);
             if (Gpu.HasBitAlign)
                 b.Append(" -D BITALIGN");
             if (Gpu.HasBfiInt)
@@ -258,7 +258,9 @@ namespace BitMaker.Miner.Gpu
             Context.ReportHashes(this, hashes);
 
             // abort if we are working on stale work, or if instructed to
-            return work.Pool.CurrentBlockNumber == work.BlockNumber && !CancellationToken.IsCancellationRequested;
+            return 
+                work.Pool.CurrentBlockNumber == work.BlockNumber &&
+                !CancellationToken.IsCancellationRequested;
         }
 
         /// <summary>

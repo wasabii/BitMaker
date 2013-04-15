@@ -7,7 +7,7 @@ namespace BitMaker.Miner.Cpu
 
     /// <summary>
     /// CPU miner factory base class which advertises a <see cref="CpuMiner"/> as capable of consuming the system's
-    /// processors. Implement this class and extend StartMiner to provide a customer miner implementation.
+    /// processors. Implement this class to return specific miner implementations.
     /// </summary>
     public abstract class CpuMinerFactory : IMinerFactory
     {

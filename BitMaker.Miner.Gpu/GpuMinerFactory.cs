@@ -3,17 +3,18 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Linq;
 
+using Cloo;
+
 namespace BitMaker.Miner.Gpu
 {
 
-    /// <summary>
-    /// CPU miner factory base class which advertises a <see cref="GpuMiner"/> as capable of consuming the system's
-    /// processors. Implement this class and extend StartMiner to provide a customer miner implementation.
-    /// </summary>
     [MinerFactory]
     public sealed class GpuMinerFactory : IMinerFactory
     {
 
+        /// <summary>
+        /// Vendors to exclude.
+        /// </summary>
         static readonly string[] excludedVendors = new string[]
         {
             "GenuineIntel",
@@ -31,7 +32,7 @@ namespace BitMaker.Miner.Gpu
         {
             try
             {
-                gpus = global::Cloo.ComputePlatform.Platforms
+                gpus = ComputePlatform.Platforms
                     .SelectMany(i => i.Devices)
                     .Where(i => !excludedVendors.Contains(i.Vendor))
                     .Select(i => new GpuDevice(i.Handle))
@@ -39,7 +40,7 @@ namespace BitMaker.Miner.Gpu
             }
             catch (TypeInitializationException)
             {
-                // ignore missing opencl implementation
+                gpus = Enumerable.Empty<GpuDevice>();
             }
         }
 

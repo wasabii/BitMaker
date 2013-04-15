@@ -34,3 +34,4 @@
 /BitMaker.Miner.Avx/obj
 
 /BitMaker.Utils.Native.Avx/x64
+/BitMaker.Utils.Native.Sse/x64

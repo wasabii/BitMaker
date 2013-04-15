@@ -1,9 +1,0 @@
-﻿Build started 4/13/2013 7:24:55 PM.
-     1>Project "C:\Users\wasabi\Development\BitMaker\BitMaker.Utils.Native.Sse\BitMaker.Utils.Native.Sse.vcxproj" on node 2 (Build target(s)).
-     1>Link:
-         BitMaker.Utils.Native.Sse.vcxproj -> C:\Users\wasabi\Development\BitMaker\x64\Debug\BitMaker.Utils.Native.Sse.dll
-     1>Done Building Project "C:\Users\wasabi\Development\BitMaker\BitMaker.Utils.Native.Sse\BitMaker.Utils.Native.Sse.vcxproj" (Build target(s)).
-
-Build succeeded.
-
-Time Elapsed 00:00:00.12

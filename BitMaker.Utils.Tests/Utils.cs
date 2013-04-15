@@ -2,6 +2,7 @@
 
 namespace BitMaker.Utils.Tests
 {
+
     public static class Utils
     {
 
@@ -14,4 +15,5 @@ namespace BitMaker.Utils.Tests
         };
 
     }
+
 }

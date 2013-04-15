@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+
 using Cloo;
 using Cloo.Bindings;
 
@@ -19,7 +20,7 @@ namespace BitMaker.Miner.Gpu
         /// </summary>
         static readonly string[] BFI_INT_DEVICES = new string[]
         {
-			"Cedar",
+            "Cedar",
             "Redwood",
             "Juniper",
             "Cypress",
@@ -34,7 +35,7 @@ namespace BitMaker.Miner.Gpu
             "Wrestler",
             "WinterPark",
             "BeaverCreek",
-	    };
+        };
 
         static readonly string[] UPPER = { "X", "Y", "Z", "W", "T", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "k" };
         static readonly string[] LOWER = { "x", "y", "z", "w", "t", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k" };

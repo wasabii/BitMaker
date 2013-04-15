@@ -8,7 +8,7 @@
             <summary>
             Represents an OpenCL object.
             </summary>
-            <remarks> For the purpose of Cloo an OpenCL object is an object that is identified by its handle in the OpenCL environment. </remarks>
+            <remarks> An OpenCL object is an object that is identified by its handle in the OpenCL environment. </remarks>
         </member>
         <member name="M:Cloo.ComputeObject.Equals(System.Object,System.Object)">
             <summary>
@@ -44,10 +44,104 @@
             </summary>
             <returns> The string representation of the <see cref="T:Cloo.ComputeObject"/>. </returns>
         </member>
+        <member name="M:Cloo.ComputeObject.GetArrayInfo``3(``0,``1,Cloo.ComputeObject.GetInfoDelegate{``0,``1})">
+            <summary>
+            
+            </summary>
+            <typeparam name="HandleType"></typeparam>
+            <typeparam name="InfoType"></typeparam>
+            <typeparam name="QueriedType"></typeparam>
+            <param name="handle"></param>
+            <param name="paramName"></param>
+            <param name="getInfoDelegate"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Cloo.ComputeObject.GetArrayInfo``4(``0,``1,``2,Cloo.ComputeObject.GetInfoDelegateEx{``0,``1,``2})">
+            <summary>
+            
+            </summary>
+            <typeparam name="MainHandleType"></typeparam>
+            <typeparam name="SecondHandleType"></typeparam>
+            <typeparam name="InfoType"></typeparam>
+            <typeparam name="QueriedType"></typeparam>
+            <param name="mainHandle"></param>
+            <param name="secondHandle"></param>
+            <param name="paramName"></param>
+            <param name="getInfoDelegate"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Cloo.ComputeObject.GetBoolInfo``2(``0,``1,Cloo.ComputeObject.GetInfoDelegate{``0,``1})">
+            <summary>
+            
+            </summary>
+            <typeparam name="HandleType"></typeparam>
+            <typeparam name="InfoType"></typeparam>
+            <param name="handle"></param>
+            <param name="paramName"></param>
+            <param name="getInfoDelegate"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Cloo.ComputeObject.GetInfo``3(``0,``1,Cloo.ComputeObject.GetInfoDelegate{``0,``1})">
+            <summary>
+            
+            </summary>
+            <typeparam name="HandleType"></typeparam>
+            <typeparam name="InfoType"></typeparam>
+            <typeparam name="QueriedType"></typeparam>
+            <param name="handle"></param>
+            <param name="paramName"></param>
+            <param name="getInfoDelegate"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Cloo.ComputeObject.GetInfo``4(``0,``1,``2,Cloo.ComputeObject.GetInfoDelegateEx{``0,``1,``2})">
+            <summary>
+            
+            </summary>
+            <typeparam name="MainHandleType"></typeparam>
+            <typeparam name="SecondHandleType"></typeparam>
+            <typeparam name="InfoType"></typeparam>
+            <typeparam name="QueriedType"></typeparam>
+            <param name="mainHandle"></param>
+            <param name="secondHandle"></param>
+            <param name="paramName"></param>
+            <param name="getInfoDelegate"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Cloo.ComputeObject.GetStringInfo``2(``0,``1,Cloo.ComputeObject.GetInfoDelegate{``0,``1})">
+            <summary>
+            
+            </summary>
+            <typeparam name="HandleType"></typeparam>
+            <typeparam name="InfoType"></typeparam>
+            <param name="handle"></param>
+            <param name="paramName"></param>
+            <param name="getInfoDelegate"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Cloo.ComputeObject.GetStringInfo``3(``0,``1,``2,Cloo.ComputeObject.GetInfoDelegateEx{``0,``1,``2})">
+            <summary>
+            
+            </summary>
+            <typeparam name="MainHandleType"></typeparam>
+            <typeparam name="SecondHandleType"></typeparam>
+            <typeparam name="InfoType"></typeparam>
+            <param name="mainHandle"></param>
+            <param name="secondHandle"></param>
+            <param name="paramName"></param>
+            <param name="getInfoDelegate"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Cloo.ComputeObject.SetID(System.IntPtr)">
+            <summary>
+            
+            </summary>
+            <param name="id"></param>
+        </member>
         <member name="T:Cloo.ComputeObject.GetInfoDelegate`2">
             <summary>
             
             </summary>
+            <typeparam name="HandleType"></typeparam>
             <typeparam name="InfoType"></typeparam>
             <param name="objectHandle"></param>
             <param name="paramName"></param>
@@ -60,6 +154,8 @@
             <summary>
             
             </summary>
+            <typeparam name="MainHandleType"></typeparam>
+            <typeparam name="SecondHandleType"></typeparam>
             <typeparam name="InfoType"></typeparam>
             <param name="mainObjectHandle"></param>
             <param name="secondaryObjectHandle"></param>
@@ -106,6 +202,11 @@
             <returns> A read-only collection of the available <see cref="T:Cloo.ComputeDevice"/>s on the <see cref="T:Cloo.ComputePlatform"/>. </returns>
             <remarks> This method resets the <c>ComputePlatform.Devices</c>. This is useful if one or more of them become unavailable (<c>ComputeDevice.Available</c> is <c>false</c>) after a <see cref="T:Cloo.ComputeContext"/> and <see cref="T:Cloo.ComputeCommandQueue"/>s that use the <see cref="T:Cloo.ComputeDevice"/> have been created and commands have been queued to them. Further calls will trigger an <c>OutOfResourcesComputeException</c> until this method is executed. You will also need to recreate any <see cref="T:Cloo.ComputeResource"/> that was created on the no longer available <see cref="T:Cloo.ComputeDevice"/>. </remarks>
         </member>
+        <member name="P:Cloo.ComputePlatform.Handle">
+            <summary>
+            The handle of the <see cref="T:Cloo.ComputePlatform"/>.
+            </summary>
+        </member>
         <member name="P:Cloo.ComputePlatform.Devices">
             <summary>
             Gets a read-only collection of <see cref="T:Cloo.ComputeDevice"/>s available on the <see cref="T:Cloo.ComputePlatform"/>.
@@ -129,6 +230,7 @@
             Gets a read-only collection of available <see cref="T:Cloo.ComputePlatform"/>s.
             </summary>
             <value> A read-only collection of available <see cref="T:Cloo.ComputePlatform"/>s. </value>
+            <remarks> The collection will contain no items, if no OpenCL platforms are found on the system. </remarks>
         </member>
         <member name="P:Cloo.ComputePlatform.Profile">
             <summary>
@@ -147,6 +249,46 @@
             Gets the OpenCL version string supported by the <see cref="T:Cloo.ComputePlatform"/>.
             </summary>
             <value> The OpenCL version string supported by the <see cref="T:Cloo.ComputePlatform"/>. It has the following format: <c>OpenCL[space][major_version].[minor_version][space][vendor-specific information]</c>. </value>
+        </member>
+        <member name="T:Cloo.Bindings.CLSamplerHandle">
+            <summary>
+            Represents the <see cref="T:Cloo.ComputeSampler"/> ID.
+            </summary>
+        </member>
+        <member name="M:Cloo.Bindings.CLSamplerHandle.Invalidate">
+            <summary>
+            Invalidates the handle.
+            </summary>
+        </member>
+        <member name="P:Cloo.Bindings.CLSamplerHandle.IsValid">
+            <summary>
+            Gets a logic value indicating whether the handle is valid.
+            </summary>
+        </member>
+        <member name="P:Cloo.Bindings.CLSamplerHandle.Value">
+            <summary>
+            Gets the value of the handle.
+            </summary>
+        </member>
+        <member name="T:Cloo.Bindings.CLContextHandle">
+            <summary>
+            Represents the <see cref="T:Cloo.ComputeContext"/> ID.
+            </summary>
+        </member>
+        <member name="M:Cloo.Bindings.CLContextHandle.Invalidate">
+            <summary>
+            Invalidates the handle.
+            </summary>
+        </member>
+        <member name="P:Cloo.Bindings.CLContextHandle.IsValid">
+            <summary>
+            Gets a logic value indicating whether the handle is valid.
+            </summary>
+        </member>
+        <member name="P:Cloo.Bindings.CLContextHandle.Value">
+            <summary>
+            Gets the value of the handle.
+            </summary>
         </member>
         <member name="T:Cloo.Tools">
             <summary>
@@ -207,6 +349,11 @@
             </summary>
             <param name="manual"> Specifies the operation mode of this method. </param>
             <remarks> <paramref name="manual"/> must be <c>true</c> if this method is invoked directly by the application. </remarks>
+        </member>
+        <member name="P:Cloo.ComputeSampler.Handle">
+            <summary>
+            The handle of the <see cref="T:Cloo.ComputeSampler"/>.
+            </summary>
         </member>
         <member name="P:Cloo.ComputeSampler.Context">
             <summary>
@@ -276,6 +423,11 @@
             Occurs when <c>ComputeEventBase.Status</c> changes to <c>ComputeCommandExecutionStatus.Complete</c>.
             </summary>
             <remarks> Requires OpenCL 1.1. </remarks>
+        </member>
+        <member name="P:Cloo.ComputeEventBase.Handle">
+            <summary>
+            The handle of the <see cref="T:Cloo.ComputeEventBase"/>.
+            </summary>
         </member>
         <member name="P:Cloo.ComputeEventBase.Context">
             <summary>
@@ -383,6 +535,11 @@
             </summary>
             <param name="manual"> Specifies the operation mode of this method. </param>
             <remarks> <paramref name="manual"/> must be <c>true</c> if this method is invoked directly by the application. </remarks>
+        </member>
+        <member name="P:Cloo.ComputeMemory.Handle">
+            <summary>
+            The handle of the <see cref="T:Cloo.ComputeMemory"/>.
+            </summary>
         </member>
         <member name="P:Cloo.ComputeMemory.Context">
             <summary>
@@ -604,15 +761,6 @@
             <param name="memObj"> The <see cref="T:Cloo.ComputeMemory"/> that is passed as the argument. </param>
             <remarks> This method will automatically track <paramref name="memObj"/> to prevent it from being collected by the GC.<br/> Arguments to the kernel are referred by indices that go from 0 for the leftmost argument to n-1, where n is the total number of arguments declared by the kernel. </remarks>
         </member>
-        <member name="M:Cloo.ComputeKernel.SetMemoryArgument(System.Int32,Cloo.ComputeMemory,System.Boolean)">
-            <summary>
-            Sets a <c>T*</c>, <c>image2d_t</c> or <c>image3d_t</c> argument of the <see cref="T:Cloo.ComputeKernel"/>.
-            </summary>
-            <param name="index"> The argument index. </param>
-            <param name="memObj"> The <see cref="T:Cloo.ComputeMemory"/> that is passed as the argument. </param>
-            <param name="track"> Specify whether the kernel should prevent garbage collection of the <paramref name="memObj"/> until <see cref="T:Cloo.ComputeKernel"/> execution. This is useful if the application code doesn't refer to <paramref name="memObj"/> after this call or forces a <c>GC.Collect()</c> between this call and the <see cref="T:Cloo.ComputeKernel"/> execution. </param>
-            <remarks> Arguments to the kernel are referred by indices that go from 0 for the leftmost argument to n-1, where n is the total number of arguments declared by the kernel. </remarks>
-        </member>
         <member name="M:Cloo.ComputeKernel.SetSamplerArgument(System.Int32,Cloo.ComputeSampler)">
             <summary>
             Sets a <c>sampler_t</c> argument of the <see cref="T:Cloo.ComputeKernel"/>.
@@ -620,15 +768,6 @@
             <param name="index"> The argument index. </param>
             <param name="sampler"> The <see cref="T:Cloo.ComputeSampler"/> that is passed as the argument. </param>
             <remarks> This method will automatically track <paramref name="sampler"/> to prevent it from being collected by the GC.<br/> Arguments to the kernel are referred by indices that go from 0 for the leftmost argument to n-1, where n is the total number of arguments declared by the kernel. </remarks>
-        </member>
-        <member name="M:Cloo.ComputeKernel.SetSamplerArgument(System.Int32,Cloo.ComputeSampler,System.Boolean)">
-            <summary>
-            Sets a <c>sampler_t</c> argument of the <see cref="T:Cloo.ComputeKernel"/>.
-            </summary>
-            <param name="index"> The argument index. </param>
-            <param name="sampler"> The <see cref="T:Cloo.ComputeSampler"/> that is passed as the argument. </param>
-            <param name="track"> Specify whether the kernel should prevent garbage collection of the <paramref name="sampler"/> until <see cref="T:Cloo.ComputeKernel"/> execution. This is useful if the application code doesn't refer to <paramref name="sampler"/> after this call or forces a <c>GC.Collect()</c> between this call and the <see cref="T:Cloo.ComputeKernel"/> execution. </param>
-            <remarks> Arguments to the kernel are referred by indices that go from 0 for the leftmost argument to n-1, where n is the total number of arguments declared by the kernel. </remarks>
         </member>
         <member name="M:Cloo.ComputeKernel.SetValueArgument``1(System.Int32,``0)">
             <summary>
@@ -645,6 +784,11 @@
             </summary>
             <param name="manual"> Specifies the operation mode of this method. </param>
             <remarks> <paramref name="manual"/> must be <c>true</c> if this method is invoked directly by the application. </remarks>
+        </member>
+        <member name="P:Cloo.ComputeKernel.Handle">
+            <summary>
+            The handle of the <see cref="T:Cloo.ComputeKernel"/>.
+            </summary>
         </member>
         <member name="P:Cloo.ComputeKernel.Context">
             <summary>
@@ -813,6 +957,26 @@
             <param name="context"> The <see cref="T:Cloo.ComputeContext"/> for which the collection of <see cref="T:Cloo.ComputeImageFormat"/>s is queried. </param>
             <param name="flags"> The <c>ComputeMemoryFlags</c> for which the collection of <see cref="T:Cloo.ComputeImageFormat"/>s is queried. </param>
             <returns> The collection of the required <see cref="T:Cloo.ComputeImageFormat"/>s. </returns>
+        </member>
+        <member name="T:Cloo.Bindings.CLProgramHandle">
+            <summary>
+            Represents the <see cref="T:Cloo.ComputeProgram"/> ID.
+            </summary>
+        </member>
+        <member name="M:Cloo.Bindings.CLProgramHandle.Invalidate">
+            <summary>
+            Invalidates the handle.
+            </summary>
+        </member>
+        <member name="P:Cloo.Bindings.CLProgramHandle.IsValid">
+            <summary>
+            Gets a logic value indicating whether the handle is valid.
+            </summary>
+        </member>
+        <member name="P:Cloo.Bindings.CLProgramHandle.Value">
+            <summary>
+            Gets the value of the handle.
+            </summary>
         </member>
         <member name="T:Cloo.Bindings.CL11">
             <summary>
@@ -1315,6 +1479,11 @@
             <seealso cref="T:Cloo.ComputeMemory"/>
             <seealso cref="T:Cloo.ComputePlatform"/>
         </member>
+        <member name="P:Cloo.ComputeDevice.Handle">
+            <summary>
+            The handle of the <see cref="T:Cloo.ComputeDevice"/>.
+            </summary>
+        </member>
         <member name="P:Cloo.ComputeDevice.AddressBits">
             <summary>
             Gets the default <see cref="T:Cloo.ComputeDevice"/> address space size in bits.
@@ -1810,6 +1979,11 @@
             <param name="manual"> Specifies the operation mode of this method. </param>
             <remarks> <paramref name="manual"/> must be <c>true</c> if this method is invoked directly by the application. </remarks>
         </member>
+        <member name="P:Cloo.ComputeContext.Handle">
+            <summary>
+            The handle of the <see cref="T:Cloo.ComputeContext"/>.
+            </summary>
+        </member>
         <member name="P:Cloo.ComputeContext.Devices">
             <summary>
             Gets a read-only collection of the <see cref="T:Cloo.ComputeDevice"/>s of the <see cref="T:Cloo.ComputeContext"/>.
@@ -1862,6 +2036,7 @@
             <param name="context"> A <see cref="T:Cloo.ComputeContext"/> used to create the <see cref="T:Cloo.ComputeBuffer`1"/>. </param>
             <param name="flags"> A bit-field that is used to specify allocation and usage information about the <see cref="T:Cloo.ComputeBuffer`1"/>. </param>
             <param name="data"> The data for the <see cref="T:Cloo.ComputeBuffer`1"/>. </param>
+            <remarks> Note, that <paramref name="data"/> cannot be an "immediate" parameter, i.e.: <c>new T[100]</c>, because it could be quickly collected by the GC causing Cloo to send and invalid reference to OpenCL. </remarks>
         </member>
         <member name="M:Cloo.ComputeBuffer`1.CreateFromGLBuffer``1(Cloo.ComputeContext,Cloo.ComputeMemoryFlags,System.Int32)">
             <summary>
@@ -1899,6 +2074,26 @@
             
             </summary>
             <param name="platform"></param>
+        </member>
+        <member name="T:Cloo.Bindings.CLKernelHandle">
+            <summary>
+            Represents the <see cref="T:Cloo.ComputeKernel"/> ID.
+            </summary>
+        </member>
+        <member name="M:Cloo.Bindings.CLKernelHandle.Invalidate">
+            <summary>
+            Invalidates the handle.
+            </summary>
+        </member>
+        <member name="P:Cloo.Bindings.CLKernelHandle.IsValid">
+            <summary>
+            Gets a logic value indicating whether the handle is valid.
+            </summary>
+        </member>
+        <member name="P:Cloo.Bindings.CLKernelHandle.Value">
+            <summary>
+            Gets the value of the handle.
+            </summary>
         </member>
         <member name="T:Cloo.ComputeErrorCode">
             <summary>
@@ -2480,16 +2675,16 @@
             </summary>
         </member>
         <member name="F:Cloo.ComputeMemoryFlags.None">
-            <summary> </summary>
+            <summary> Let the OpenCL choose the default flags. </summary>
         </member>
         <member name="F:Cloo.ComputeMemoryFlags.ReadWrite">
-            <summary> </summary>
+            <summary> The <see cref="T:Cloo.ComputeMemory"/> will be accessible from the <see cref="T:Cloo.ComputeKernel"/> for read and write operations. </summary>
         </member>
         <member name="F:Cloo.ComputeMemoryFlags.WriteOnly">
-            <summary> </summary>
+            <summary> The <see cref="T:Cloo.ComputeMemory"/> will be accessible from the <see cref="T:Cloo.ComputeKernel"/> for write operations only. </summary>
         </member>
         <member name="F:Cloo.ComputeMemoryFlags.ReadOnly">
-            <summary> </summary>
+            <summary> The <see cref="T:Cloo.ComputeMemory"/> will be accessible from the <see cref="T:Cloo.ComputeKernel"/> for read operations only. </summary>
         </member>
         <member name="F:Cloo.ComputeMemoryFlags.UseHostPointer">
             <summary> </summary>
@@ -3810,6 +4005,11 @@
             <param name="manual"> Specifies the operation mode of this method. </param>
             <remarks> <paramref name="manual"/> must be <c>true</c> if this method is invoked directly by the application. </remarks>
         </member>
+        <member name="P:Cloo.ComputeCommandQueue.Handle">
+            <summary>
+            The handle of the <see cref="T:Cloo.ComputeCommandQueue"/>.
+            </summary>
+        </member>
         <member name="P:Cloo.ComputeCommandQueue.Context">
             <summary>
             Gets the <see cref="T:Cloo.ComputeContext"/> of the <see cref="T:Cloo.ComputeCommandQueue"/>.
@@ -3833,6 +4033,46 @@
             Gets the profiling mode of the commands in the <see cref="T:Cloo.ComputeCommandQueue"/>.
             </summary>
             <value> Is <c>true</c> if <see cref="T:Cloo.ComputeCommandQueue"/> has profiling enabled and <c>false</c> otherwise. </value>
+        </member>
+        <member name="T:Cloo.Bindings.CLDeviceHandle">
+            <summary>
+            Represents the <see cref="T:Cloo.ComputeDevice"/> ID.
+            </summary>
+        </member>
+        <member name="M:Cloo.Bindings.CLDeviceHandle.Invalidate">
+            <summary>
+            Invalidates the handle.
+            </summary>
+        </member>
+        <member name="P:Cloo.Bindings.CLDeviceHandle.IsValid">
+            <summary>
+            Gets a logic value indicating whether the handle is valid.
+            </summary>
+        </member>
+        <member name="P:Cloo.Bindings.CLDeviceHandle.Value">
+            <summary>
+            Gets the value of the handle.
+            </summary>
+        </member>
+        <member name="T:Cloo.Bindings.CLMemoryHandle">
+            <summary>
+            Represents the <see cref="T:Cloo.ComputeMemory"/> ID.
+            </summary>
+        </member>
+        <member name="M:Cloo.Bindings.CLMemoryHandle.Invalidate">
+            <summary>
+            Invalidates the handle.
+            </summary>
+        </member>
+        <member name="P:Cloo.Bindings.CLMemoryHandle.IsValid">
+            <summary>
+            Gets a logic value indicating whether the handle is valid.
+            </summary>
+        </member>
+        <member name="P:Cloo.Bindings.CLMemoryHandle.Value">
+            <summary>
+            Gets the value of the handle.
+            </summary>
         </member>
         <member name="T:Cloo.ComputeException">
             <summary>
@@ -3861,6 +4101,46 @@
         <member name="P:Cloo.ComputeException.ComputeErrorCode">
             <summary>
             Gets the <see cref="P:Cloo.ComputeException.ComputeErrorCode"/> of the <see cref="T:Cloo.ComputeException"/>.
+            </summary>
+        </member>
+        <member name="T:Cloo.Bindings.CLPlatformHandle">
+            <summary>
+            Represents the <see cref="T:Cloo.ComputePlatform"/> ID.
+            </summary>
+        </member>
+        <member name="M:Cloo.Bindings.CLPlatformHandle.Invalidate">
+            <summary>
+            Invalidates the handle.
+            </summary>
+        </member>
+        <member name="P:Cloo.Bindings.CLPlatformHandle.IsValid">
+            <summary>
+            Gets a logic value indicating whether the handle is valid.
+            </summary>
+        </member>
+        <member name="P:Cloo.Bindings.CLPlatformHandle.Value">
+            <summary>
+            Gets the value of the handle.
+            </summary>
+        </member>
+        <member name="T:Cloo.Bindings.CLEventHandle">
+            <summary>
+            Represents the <see cref="T:Cloo.ComputeEvent"/> ID.
+            </summary>
+        </member>
+        <member name="M:Cloo.Bindings.CLEventHandle.Invalidate">
+            <summary>
+            Invalidates the handle.
+            </summary>
+        </member>
+        <member name="P:Cloo.Bindings.CLEventHandle.IsValid">
+            <summary>
+            Gets a logic value indicating whether the handle is valid.
+            </summary>
+        </member>
+        <member name="P:Cloo.Bindings.CLEventHandle.Value">
+            <summary>
+            Gets the value of the handle.
             </summary>
         </member>
         <member name="T:Cloo.SysIntX3">
@@ -3993,6 +4273,11 @@
             </summary>
             <param name="manual"> Specifies the operation mode of this method. </param>
             <remarks> <paramref name="manual"/> must be <c>true</c> if this method is invoked directly by the application. </remarks>
+        </member>
+        <member name="P:Cloo.ComputeProgram.Handle">
+            <summary>
+            The handle of the <see cref="T:Cloo.ComputeProgram"/>.
+            </summary>
         </member>
         <member name="P:Cloo.ComputeProgram.Binaries">
             <summary>
@@ -4167,6 +4452,26 @@
             Sets the new status of the <see cref="T:Cloo.ComputeUserEvent"/> to an error value.
             </summary>
             <param name="status"> The error status of the <see cref="T:Cloo.ComputeUserEvent"/>. This should be a negative value. </param>
+        </member>
+        <member name="T:Cloo.Bindings.CLCommandQueueHandle">
+            <summary>
+            Represents the <see cref="T:Cloo.ComputeCommandQueue"/> ID.
+            </summary>
+        </member>
+        <member name="M:Cloo.Bindings.CLCommandQueueHandle.Invalidate">
+            <summary>
+            Invalidates the handle.
+            </summary>
+        </member>
+        <member name="P:Cloo.Bindings.CLCommandQueueHandle.IsValid">
+            <summary>
+            Gets a logic value indicating whether the handle is valid.
+            </summary>
+        </member>
+        <member name="P:Cloo.Bindings.CLCommandQueueHandle.Value">
+            <summary>
+            Gets the value of the handle.
+            </summary>
         </member>
         <member name="T:Cloo.ComputeEvent">
             <summary>
