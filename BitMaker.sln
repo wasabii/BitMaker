@@ -30,6 +30,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "BitMaker.Utils.Native.Sse",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BitMaker.Miner.Gpu.Tests", "BitMaker.Miner.Gpu.Tests\BitMaker.Miner.Gpu.Tests.csproj", "{9ABB5574-6B68-44CF-B20D-DCD3C930B280}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cloo.VS2010", "Cloo\Cloo\Cloo.VS2010.csproj", "{656E96CE-2587-4CCC-A4DB-06D36267133A}"
+EndProject
 Global
 	GlobalSection(TestCaseManagementSettings) = postSolution
 		CategoryFile = BitMaker.vsmdi
@@ -153,6 +155,16 @@ Global
 		{9ABB5574-6B68-44CF-B20D-DCD3C930B280}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{9ABB5574-6B68-44CF-B20D-DCD3C930B280}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{9ABB5574-6B68-44CF-B20D-DCD3C930B280}.Release|x64.ActiveCfg = Release|Any CPU
+		{656E96CE-2587-4CCC-A4DB-06D36267133A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{656E96CE-2587-4CCC-A4DB-06D36267133A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{656E96CE-2587-4CCC-A4DB-06D36267133A}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{656E96CE-2587-4CCC-A4DB-06D36267133A}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{656E96CE-2587-4CCC-A4DB-06D36267133A}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{656E96CE-2587-4CCC-A4DB-06D36267133A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{656E96CE-2587-4CCC-A4DB-06D36267133A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{656E96CE-2587-4CCC-A4DB-06D36267133A}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{656E96CE-2587-4CCC-A4DB-06D36267133A}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{656E96CE-2587-4CCC-A4DB-06D36267133A}.Release|x64.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
