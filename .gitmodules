@@ -1,0 +1,3 @@
+[submodule "Cloo"]
+	path = Cloo
+	url = git://git.code.sf.net/p/cloo/code
