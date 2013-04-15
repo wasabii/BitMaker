@@ -272,7 +272,7 @@ namespace BitMaker.Miner.Gpu
         {
             // allocate buffers to hold hashing work
             byte[] round1Blocks, round2Blocks;
-            uint[] round1State, round1State2Pre, round2State;
+            uint[] round1State, round1State2Mid, round2State;
 
             // allocate buffers and create partial hash
             PrepareWork(work, out round1Blocks, out round1State, out round2Blocks, out round2State);
@@ -283,11 +283,11 @@ namespace BitMaker.Miner.Gpu
                 Sha256.Schedule(round1BlocksPtr + Sha256.SHA256_BLOCK_SIZE, W);
 
             // complete first three rounds of block 2
-            round1State2Pre = Sha256.AllocateStateBuffer();
-            Array.Copy(round1State, round1State2Pre, Sha256.SHA256_STATE_SIZE);
-            Sha256.Round(ref round1State2Pre[0], ref round1State2Pre[1], ref round1State2Pre[2], ref round1State2Pre[3], ref round1State2Pre[4], ref round1State2Pre[5], ref round1State2Pre[6], ref round1State2Pre[7], W, 0);
-            Sha256.Round(ref round1State2Pre[0], ref round1State2Pre[1], ref round1State2Pre[2], ref round1State2Pre[3], ref round1State2Pre[4], ref round1State2Pre[5], ref round1State2Pre[6], ref round1State2Pre[7], W, 1);
-            Sha256.Round(ref round1State2Pre[0], ref round1State2Pre[1], ref round1State2Pre[2], ref round1State2Pre[3], ref round1State2Pre[4], ref round1State2Pre[5], ref round1State2Pre[6], ref round1State2Pre[7], W, 2);
+            round1State2Mid = Sha256.AllocateStateBuffer();
+            Array.Copy(round1State, round1State2Mid, Sha256.SHA256_STATE_SIZE);
+            Sha256.Round(ref round1State2Mid[0], ref round1State2Mid[1], ref round1State2Mid[2], ref round1State2Mid[3], ref round1State2Mid[4], ref round1State2Mid[5], ref round1State2Mid[6], ref round1State2Mid[7], W, 0);
+            Sha256.Round(ref round1State2Mid[0], ref round1State2Mid[1], ref round1State2Mid[2], ref round1State2Mid[3], ref round1State2Mid[4], ref round1State2Mid[5], ref round1State2Mid[6], ref round1State2Mid[7], W, 1);
+            Sha256.Round(ref round1State2Mid[0], ref round1State2Mid[1], ref round1State2Mid[2], ref round1State2Mid[3], ref round1State2Mid[4], ref round1State2Mid[5], ref round1State2Mid[6], ref round1State2Mid[7], W, 2);
 
             // precalculated peices that are independent of nonce
             uint W16 = W[16];
@@ -296,15 +296,15 @@ namespace BitMaker.Miner.Gpu
             uint W19 = W[19];
             uint W31 = W[31];
             uint W32 = W[32];
-            uint PreVal4 = round1State[4] + (Sha256.Rotr(round1State2Pre[1], 6) ^ Sha256.Rotr(round1State2Pre[1], 11) ^ Sha256.Rotr(round1State2Pre[1], 25)) + (round1State2Pre[3] ^ (round1State2Pre[1] & (round1State2Pre[2] ^ round1State2Pre[3]))) + Sha256.K[3];
-            uint T1 = (Sha256.Rotr(round1State2Pre[5], 2) ^ Sha256.Rotr(round1State2Pre[5], 13) ^ Sha256.Rotr(round1State2Pre[5], 22)) + ((round1State2Pre[5] & round1State2Pre[6]) | (round1State2Pre[7] & (round1State2Pre[5] | round1State2Pre[6])));
+            uint PreVal4 = round1State[4] + (Sha256.Rotr(round1State2Mid[1], 6) ^ Sha256.Rotr(round1State2Mid[1], 11) ^ Sha256.Rotr(round1State2Mid[1], 25)) + (round1State2Mid[3] ^ (round1State2Mid[1] & (round1State2Mid[2] ^ round1State2Mid[3]))) + Sha256.K[3];
+            uint T1 = (Sha256.Rotr(round1State2Mid[5], 2) ^ Sha256.Rotr(round1State2Mid[5], 13) ^ Sha256.Rotr(round1State2Mid[5], 22)) + ((round1State2Mid[5] & round1State2Mid[6]) | (round1State2Mid[7] & (round1State2Mid[5] | round1State2Mid[6])));
             uint PreVal4_state0 = PreVal4 + round1State[0];
-            uint PreVal4_state0_k7 = (uint)(PreVal4_state0 + 0xAB1C5ED5L);
+            uint PreVal4_state0_K7 = (uint)(PreVal4_state0 + Sha256.K[7]);
             uint PreVal4_T1 = PreVal4 + T1;
-            uint B1_plus_K6 = (uint)(round1State2Pre[1] + 0x923f82a4L);
-            uint C1_plus_K5 = (uint)(round1State2Pre[2] + 0x59f111f1L);
-            uint W16_plus_K16 = (uint)(W16 + 0xe49b69c1L);
-            uint W17_plus_K17 = (uint)(W17 + 0xefbe4786L);
+            uint B1_plus_K6 = (uint)(round1State2Mid[1] + Sha256.K[6]);
+            uint C1_plus_K5 = (uint)(round1State2Mid[2] + Sha256.K[5]);
+            uint W16_plus_K16 = (uint)(W16 + Sha256.K[16]);
+            uint W17_plus_K17 = (uint)(W17 + Sha256.K[17]);
 
             // clear output buffers, in case they've already been used
             uint[] outputZero = new uint[16];
@@ -355,7 +355,7 @@ namespace BitMaker.Miner.Gpu
                 // execute kernel with computed values
                 clQueue.Finish();
                 clKernel.SetValueArgument(0, PreVal4_state0);
-                clKernel.SetValueArgument(1, PreVal4_state0_k7);
+                clKernel.SetValueArgument(1, PreVal4_state0_K7);
                 clKernel.SetValueArgument(2, PreVal4_T1);
                 clKernel.SetValueArgument(3, W18);
                 clKernel.SetValueArgument(4, W19);
@@ -365,12 +365,12 @@ namespace BitMaker.Miner.Gpu
                 clKernel.SetValueArgument(8, W17_plus_K17);
                 clKernel.SetValueArgument(9, W31);
                 clKernel.SetValueArgument(10, W32);
-                clKernel.SetValueArgument(11, (uint)(round1State2Pre[3] + 0xB956c25bL));
-                clKernel.SetValueArgument(12, round1State2Pre[1]);
-                clKernel.SetValueArgument(13, round1State2Pre[2]);
-                clKernel.SetValueArgument(14, round1State2Pre[7]);
-                clKernel.SetValueArgument(15, round1State2Pre[5]);
-                clKernel.SetValueArgument(16, round1State2Pre[6]);
+                clKernel.SetValueArgument(11, (uint)(round1State2Mid[3] + 0xB956c25bL));
+                clKernel.SetValueArgument(12, round1State2Mid[1]);
+                clKernel.SetValueArgument(13, round1State2Mid[2]);
+                clKernel.SetValueArgument(14, round1State2Mid[7]);
+                clKernel.SetValueArgument(15, round1State2Mid[5]);
+                clKernel.SetValueArgument(16, round1State2Mid[6]);
                 clKernel.SetValueArgument(17, C1_plus_K5);
                 clKernel.SetValueArgument(18, B1_plus_K6);
                 clKernel.SetValueArgument(19, round1State[0]);
