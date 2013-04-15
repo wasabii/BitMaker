@@ -137,7 +137,7 @@ namespace BitMaker.Miner
                     while (!run)
                         Monitor.Wait(syncRoot, 15000);
 
-                // begin timer to compile statistics, even while testing miners
+                // begin timer to compile statistics
                 lock (syncRoot)
                 {
                     previousHashCount = 0;
@@ -165,18 +165,18 @@ namespace BitMaker.Miner
                         .Where(i => cfg.Miners.Any(j => j.Type.IsInstanceOfType(i)));
 
                 // resources, with the miner factories that can use them
-                var resourceMiners = factories
+                var minersByDevice = factories
                     .SelectMany(i => i.Miners
                         .Select(j => new
                         {
                             Factory = i,
                             Miner = j,
-                            Resource = j.Device,
+                            Device = j.Device,
                         }))
-                    .GroupBy(i => i.Resource)
+                    .GroupBy(i => i.Device)
                     .Select(i => new
                     {
-                        Resource = i.Key,
+                        Device = i.Key,
                         Miners = i
                             .Select(j => j.Miner)
                             .ToList(),
@@ -184,10 +184,10 @@ namespace BitMaker.Miner
                     .ToList();
 
                 // for each resource, start the appropriate miner
-                foreach (var resourceMiner in resourceMiners)
+                foreach (var deviceMiners in minersByDevice)
                 {
                     // select miner with the top number of sample hashes, or first
-                    var miner = resourceMiner.Miners.Count == 1 ? resourceMiner.Miners[0] : resourceMiner.Miners
+                    var miner = deviceMiners.Miners.Count == 1 ? deviceMiners.Miners[0] : deviceMiners.Miners
                         .Select(i => new { Miner = i, Hashes = run ? SampleMiner(i) : 0 })
                         .OrderByDescending(i => i.Hashes)
                         .Select(i => i.Miner)

@@ -1,5 +1,4 @@
-﻿using System;
-using System.Threading;
+﻿using System.Threading;
 
 using BitMaker.Miner.Cpu;
 using BitMaker.Utils;
@@ -25,6 +24,23 @@ namespace BitMaker.Miner.Managed
         }
 
         /// <summary>
+        /// Reports progress and determines if work is still valid.
+        /// </summary>
+        /// <param name="work"></param>
+        /// <param name="hashes"></param>
+        /// <returns></returns>
+        bool Progress(Work work, long hashes)
+        {
+            // report hashes to context
+            Context.ReportHashes(this, hashes);
+
+            // abort if we are working on stale work, or if instructed to
+            return 
+                work.Pool.CurrentBlockNumber == work.BlockNumber &&
+                !CancellationToken.IsCancellationRequested;
+        }
+
+        /// <summary>
         /// Implements the search function in managed code.
         /// </summary>
         /// <param name="work"></param>
@@ -35,16 +51,6 @@ namespace BitMaker.Miner.Managed
         /// <returns></returns>
         public override unsafe uint? Search(Work work, uint* round1State, byte* round1Block2, uint* round2State, byte* round2Block1)
         {
-            // invoked periodically to report hashes and check status
-            var check = (Func<uint, bool>)(i =>
-            {
-                // report hashes to context
-                Context.ReportHashes(this, i);
-
-                // abort if we are working on stale work, or if instructed to
-                return work.Pool.CurrentBlockNumber == work.BlockNumber && !CancellationToken.IsCancellationRequested;
-            });
-
             // starting nonce
             uint nonce = 0;
 
@@ -69,7 +75,7 @@ namespace BitMaker.Miner.Managed
 
                 // only report and check for exit conditions every so often
                 if ((++nonce % 65536) == 0)
-                    if (!check(65536) || nonce == 0)
+                    if (!Progress(work, 65536) || nonce == 0)
                         break;
             }
 
