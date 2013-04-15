@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 
@@ -200,50 +201,60 @@ namespace BitMaker.Miner.Gpu
         /// <summary>
         /// Attempts to initialize OpenCL for the selected GPU.
         /// </summary>
-        void InitializeOpenCL()
+        internal void InitializeOpenCL()
         {
             // only initialize once
             if (clKernel != null)
                 return;
 
-            clDevice = Gpu.CLDevice;
-
-            // context we'll be working underneath
-            clContext = new ComputeContext(
-                new[] { clDevice },
-                new ComputeContextPropertyList(clDevice.Platform),
-                null,
-                IntPtr.Zero);
-
-            // queue to control device
-            clQueue = new ComputeCommandQueue(clContext, clDevice, ComputeCommandQueueFlags.None);
-
-            // buffers to store kernel output
-            clBuffer0 = new ComputeBuffer<uint>(clContext, ComputeMemoryFlags.ReadOnly, 16);
-            clBuffer1 = new ComputeBuffer<uint>(clContext, ComputeMemoryFlags.ReadOnly, 16);
-
-            // obtain the program
-            clProgram = new ComputeProgram(clContext, Gpu.GetSource());
-
-            var b = new StringBuilder();
-            if (Gpu.WorkSize > 0)
-                b.Append(" -D WORKSIZE=").Append(Gpu.WorkSize);
-            if (Gpu.HasBitAlign)
-                b.Append(" -D BITALIGN");
-            if (Gpu.HasBfiInt)
-                b.Append(" -D BFIINT");
+            // unused memory so Cloo doesn't break with a null ptr
+            var userDataPtr = Marshal.AllocCoTaskMem(512);
 
             try
             {
-                // build kernel for device
-                clProgram.Build(new[] { clDevice }, b.ToString(), null, IntPtr.Zero);
-            }
-            catch (ComputeException)
-            {
-                throw new Exception(clProgram.GetBuildLog(clDevice));
-            }
+                clDevice = Gpu.CLDevice;
 
-            clKernel = clProgram.CreateKernel("search");
+                // context we'll be working underneath
+                clContext = new ComputeContext(
+                    new[] { clDevice },
+                    new ComputeContextPropertyList(clDevice.Platform),
+                    (p1, p2, p3, p4) => { },
+                    userDataPtr);
+
+                // queue to control device
+                clQueue = new ComputeCommandQueue(clContext, clDevice, ComputeCommandQueueFlags.None);
+
+                // buffers to store kernel output
+                clBuffer0 = new ComputeBuffer<uint>(clContext, ComputeMemoryFlags.ReadOnly, 16);
+                clBuffer1 = new ComputeBuffer<uint>(clContext, ComputeMemoryFlags.ReadOnly, 16);
+
+                // obtain the program
+                clProgram = new ComputeProgram(clContext, Gpu.GetSource());
+
+                var b = new StringBuilder();
+                if (Gpu.WorkSize > 0)
+                    b.Append(" -D WORKSIZE=").Append(Gpu.WorkSize);
+                if (Gpu.HasBitAlign)
+                    b.Append(" -D BITALIGN");
+                if (Gpu.HasBfiInt)
+                    b.Append(" -D BFIINT");
+
+                try
+                {
+                    // build kernel for device
+                    clProgram.Build(new[] { clDevice }, b.ToString(), (p1, p2) => { }, userDataPtr);
+                }
+                catch (ComputeException)
+                {
+                    throw new Exception(clProgram.GetBuildLog(clDevice));
+                }
+
+                clKernel = clProgram.CreateKernel("search");
+            }
+            finally
+            {
+                Marshal.FreeCoTaskMem(userDataPtr);
+            }
         }
 
         /// <summary>
@@ -258,7 +269,7 @@ namespace BitMaker.Miner.Gpu
             Context.ReportHashes(this, hashes);
 
             // abort if we are working on stale work, or if instructed to
-            return 
+            return
                 work.Pool.CurrentBlockNumber == work.BlockNumber &&
                 !CancellationToken.IsCancellationRequested;
         }
@@ -268,7 +279,7 @@ namespace BitMaker.Miner.Gpu
         /// <paramref name="work"/> is updated to reflect the solution.
         /// </summary>
         /// <param name="work"></param>
-        unsafe void Work(Work work)
+        internal unsafe void Work(Work work)
         {
             // allocate buffers to hold hashing work
             byte[] round1Blocks, round2Blocks;
