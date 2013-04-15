@@ -35,3 +35,5 @@
 
 /BitMaker.Utils.Native.Avx/x64
 /BitMaker.Utils.Native.Sse/x64
+/BitMaker.Miner.Gpu.Tests/bin
+/BitMaker.Miner.Gpu.Tests/obj
